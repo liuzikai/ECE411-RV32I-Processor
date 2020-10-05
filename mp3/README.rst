@@ -480,7 +480,7 @@ We include an **example design** for your reference while completing this checkp
 
 In addition to the 'paper' design, you should start planning how you will test your design. In no more than a single page, answer the following questions:
 
-1. Address the following with **maximum 1-2 sentences** each:
+1. Address the following with **maximum 1-2 sentences** each (about MP2):
 
     - Did you use randomized testing and if so, did it reveal any design flaws that you missed with targeted testing?
     - Did the autograder help alert you to the presence of bugs in your design (even if you didn't know where they were)?
