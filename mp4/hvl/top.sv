@@ -17,7 +17,7 @@ source_tb tb(
 /****************************** End do not touch *****************************/
 
 /************************ Signals necessary for monitor **********************/
-// This section not required until CP3
+// This section not required until CP2
 
 assign rvfi.commit = 0; // Set high when a valid instruction is modifying regfile or PC
 assign rvfi.halt = 0;   // Set high when you detect an infinite loop
