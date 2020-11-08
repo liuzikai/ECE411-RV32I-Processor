@@ -22,7 +22,8 @@ typedef enum bit [6:0] {
     op_store = 7'b0100011, //store (S type)
     op_imm   = 7'b0010011, //arith ops with register/immediate operands (I type)
     op_reg   = 7'b0110011, //arith ops with register operands (R type)
-    op_csr   = 7'b1110011  //control and status register (I type)
+    op_csr   = 7'b1110011, //control and status register (I type)
+    op_none  = 7'b0000000
 } rv32i_opcode;
 
 typedef enum bit [2:0] {
@@ -80,8 +81,8 @@ typedef struct packed {
 
     // ================ Datapath ================
 
-    logic load_pc;
-    logic load_ir;
+    // logic load_pc;
+    // logic load_ir;
     logic load_regfile;
     logic load_mdar;
     // logic load_mddr;
@@ -110,11 +111,11 @@ typedef struct packed {
     logic [4:0] rd;
 
     //========== intermediate register signal =======
-    logic alu_in1_ld;
-    logic alu_in2_ld;
-    logic cmp_in1_ld;
-    logic cmp_in2_ld;
-    logic regfile_load_in;
+    // logic alu_in1_ld;
+    // logic alu_in2_ld;
+    // logic cmp_in1_ld;
+    // logic cmp_in2_ld;
+    // logic regfile_load_in;
 
 } rv32i_control_word;
 

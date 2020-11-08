@@ -14,8 +14,8 @@ module control_rom
 function void set_defaults();
     // datapath signal
     ctrl.opcode = opcode;
-    ctrl.load_pc = 1'b0;
-    ctrl.load_ir = 1'b0;
+    // ctrl.load_pc = 1'b0;
+    // ctrl.load_ir = 1'b0;
     ctrl.load_regfile = 1'b0;
     ctrl.load_mdar = 1'b0;
     // ctrl.load_mddr = 1'b0;
@@ -38,11 +38,11 @@ function void set_defaults();
     // ctrl.rs2=
     ctrl.rd=instruction[11:7];
     // internal register control signal
-    ctrl.alu_in1_ld = 1'b0;
-    ctrl.alu_in2_ld = 1'b0;
-    ctrl.cmp_in1_ld = 1'b0;
-    ctrl.cmp_in2_ld = 1'b0;    
-    ctrl.regfile_load_in = 1'b0;
+    // ctrl.alu_in1_ld = 1'b0;
+    // ctrl.alu_in2_ld = 1'b0;
+    // ctrl.cmp_in1_ld = 1'b0;
+    // ctrl.cmp_in2_ld = 1'b0;    
+    // ctrl.regfile_load_in = 1'b0;
 endfunction
 
 function void setALU(alumux::alumux1_sel_t sel1,
@@ -60,7 +60,7 @@ function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 endfunction
 
 function void loadPC(pcmux::pcmux_sel_t sel);
-    ctrl.load_pc = 1'b1;
+    // ctrl.load_pc = 1'b1;
     ctrl.pcmux_sel = sel;
 endfunction
 
