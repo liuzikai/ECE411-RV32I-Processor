@@ -14,8 +14,8 @@ module control_rom
 function void set_defaults();
     // datapath signal
     ctrl.opcode = opcode;
-    // ctrl.load_pc = 1'b0;
-    // ctrl.load_ir = 1'b0;
+    ctrl.load_pc = 1'b0;
+    ctrl.load_ir = 1'b0;
     ctrl.load_regfile = 1'b0;
     ctrl.load_mdar = 1'b0;
     // ctrl.load_mddr = 1'b0;
@@ -60,7 +60,7 @@ function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
 endfunction
 
 function void loadPC(pcmux::pcmux_sel_t sel);
-    // ctrl.load_pc = 1'b1;
+    ctrl.load_pc = 1'b1;
     ctrl.pcmux_sel = sel;
 endfunction
 

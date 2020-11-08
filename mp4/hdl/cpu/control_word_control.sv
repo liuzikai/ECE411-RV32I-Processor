@@ -35,6 +35,7 @@ module control_word_control
     // General registers
     input logic i_cache_resp,
     input logic d_cache_resp,
+    output logic load_pc,
     output logic stall
 );
 
@@ -47,17 +48,17 @@ assign alumux2_sel = IF_ID.alumux2_sel;
 assign use_br_en = ID_EX.use_br_en;
 assign aluop = ID_EX.aluop;
 assign cmpop = ID_EX.cmpop;
-assign load_mdar = ID_EX.load_mdar;
+assign load_mdar = ID_EX.load_mdar & (~stall);
 
 // EX-MEM
-assign load_data_out = EX_MEM.load_data_out;
+assign load_data_out = EX_MEM.load_data_out & (~stall);
 assign mem_read = EX_MEM.mem_read;
 assign mem_write = EX_MEM.mem_write;
 assign mem_byte_enable = EX_MEM.mem_byte_enable;
 assign regfilemux_sel = EX_MEM.regfilemux_sel;
 
 // MEM-WB
-assign load_regfile = MEM_WB.load_regfile;
+assign load_regfile = MEM_WB.load_regfile & (~stall);
 assign rd = MEM_WB.rd;
 
 assign stall = (!i_cache_resp) || (!d_ready_next);
@@ -103,6 +104,7 @@ always_ff @(posedge clk) begin
         EX_MEM <= FLUSH;
         MEM_WB <= FLUSH;
         d_ready <= 1'b0;
+        load_pc <= 1'b1;
     end
     else if (stall) begin
         IF_ID <= IF_ID;
@@ -110,6 +112,7 @@ always_ff @(posedge clk) begin
         EX_MEM <= EX_MEM;
         MEM_WB <= MEM_WB;
         d_ready <= d_ready_next;
+        load_pc <= 1'b0;
     end
     else begin
         IF_ID <= (flush_list[0]) ? FLUSH : new_control_word;
@@ -117,6 +120,7 @@ always_ff @(posedge clk) begin
         EX_MEM <= (flush_list[2]) ? FLUSH : ID_EX;
         MEM_WB <= (flush_list[3]) ? FLUSH : EX_MEM;
         d_ready <= 1'b0;
+        load_pc <= 1'b1;
     end
 end
 

@@ -81,8 +81,8 @@ typedef struct packed {
 
     // ================ Datapath ================
 
-    // logic load_pc;
-    // logic load_ir;
+    logic load_pc;
+    logic load_ir;
     logic load_regfile;
     logic load_mdar;
     // logic load_mddr;
