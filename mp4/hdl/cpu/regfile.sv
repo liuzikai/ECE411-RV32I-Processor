@@ -1,7 +1,4 @@
-/* DO NOT MODIFY. WILL BE OVERRIDDEN BY THE AUTOGRADER. */
-
-module regfile
-(
+module regfile (
     input clk,
     input rst,
     input load,

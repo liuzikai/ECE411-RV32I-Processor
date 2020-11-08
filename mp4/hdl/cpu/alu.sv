@@ -1,16 +1,12 @@
-/* DO NOT MODIFY. WILL BE OVERRIDDEN BY THE AUTOGRADER. */
-
 import rv32i_types::*;
 
-module alu
-(
+module alu (
     input alu_ops aluop,
     input [31:0] a, b,
     output logic [31:0] f
 );
 
-always_comb
-begin
+always_comb begin
     unique case (aluop)
         alu_add:  f = a + b;
         alu_sll:  f = a << b[4:0];

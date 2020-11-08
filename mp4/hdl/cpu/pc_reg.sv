@@ -1,7 +1,4 @@
-/* DO NOT MODIFY. WILL BE OVERRIDDEN BY THE AUTOGRADER. */
-
-module pc_register #(parameter width = 32)
-(
+module pc_register #(parameter width = 32) (
     input clk,
     input rst,
     input load,
@@ -10,28 +7,22 @@ module pc_register #(parameter width = 32)
 );
 
 /*
-* PC needs to start at 0x60
+ * PC needs to start at 0x60
  */
 logic [width-1:0] data;
 
 always_ff @(posedge clk)
 begin
-    if (rst)
-    begin
+    if (rst) begin
         data <= 32'h00000060;
-    end
-    else if (load)
-    begin
+    end else if (load) begin
         data <= in;
-    end
-    else
-    begin
+    end else begin
         data <= data;
     end
 end
 
-always_comb
-begin
+always_comb begin
     out = data;
 end
 

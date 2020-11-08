@@ -6,58 +6,68 @@ module datapath(
     input clk,
     input rst,
 
+    // Signals output to control_rom
+    output rv32i_opcode opcode,
+    output logic [2:0] funct3,
+    output logic [6:0] funct7,
+    output rv32i_reg rd_out,
+
+    // Signals to intermediate registers
     input logic load_pc,
     input logic load_ir,
-    input logic load_regfile,
-    input logic load_mar,
-    input logic load_mdr,
-    input logic load_data_out,
+    input logic load_regfile_imm,
 
-    input pcmux::pcmux_sel_t pcmux_sel,
-    input branch_funct3_t cmpop,
+    // Signals from control words to MUXes
     input alumux::alumux1_sel_t alumux1_sel,
     input alumux::alumux2_sel_t alumux2_sel,
     input regfilemux::regfilemux_sel_t regfilemux_sel,
-    input marmux::marmux_sel_t marmux_sel,
     input cmpmux::cmpmux_sel_t cmpmux_sel,
+    input pcmux::pcmux_sel_t pcmux_sel,
+
+    // Signals to ALU, CMP and regfile
     input alu_ops aluop,
+    input branch_funct3_t cmpop,
+    input logic load_regfile,
+    input rv32i_reg rd_in,
 
-    input logic [1:0] mem_shift_amount,
+    // Signals to I-Cache
+    output rv32i_word i_addr,
+    input  rv32i_word i_rdata,
 
-    output rv32i_word mem_address,
-    input rv32i_word mem_rdata,
-    output rv32i_word mem_wdata, // signal used by RVFI Monitor
+    // Signals to D-Cache
+    output rv32i_word d_addr,
+    input  rv32i_word d_rdata,
+    output rv32i_word d_wdata,
 
-    output rv32i_opcode opcode,
-    output logic [2:0] funct3,
-    output logic [4:0] rs1,
-    output logic [4:0] rs2,
-    output logic [6:0] funct7,
-
-    output logic br_en,
-    output logic [1:0] alu_out_2lsb
+    // Signals for branch control
+    input  logic use_br_en,
+    output logic br_en
+    // TODO: more signals to add in order to support flush and branch prediction
 );
 
-/******************* Signals Needed for RVFI Monitor *************************/
-rv32i_word pcmux_out;
-rv32i_word mdrreg_out;
-rv32i_word mem_addr;
-assign mem_addr = mem_address;
-/*****************************************************************************/
+// ================================ Internal signals ================================
 
-rv32i_reg rd;
+rv32i_reg rs1, rs2;  // directly connected from IR to regfile, since it is used directly in the ID stage
+
 rv32i_word rs1_out, rs2_out;
 rv32i_word i_imm, u_imm, b_imm, s_imm, j_imm;
-rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out;
 rv32i_word alu_out, pc_out;
-rv32i_word mem_data_out_in;
-/***************************** Registers *************************************/
+
+rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2;
+pcmux::pcmux_sel_t pcmux_sel;
+
+rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out;
+
+assign i_addr = pc_out;
+
+// ================================ Registers ================================
+
 // Keep Instruction register named `IR` for RVFI Monitor
 ir IR(
     .clk(clk),
     .rst(rst),
     .load(load_ir),
-    .in(mdrreg_out),
+    .in(i_rdata),
     .funct3(funct3),
     .funct7(funct7),
     .opcode(opcode),
@@ -66,12 +76,12 @@ ir IR(
     .b_imm(b_imm),
     .s_imm(s_imm),
     .j_imm(j_imm),
-    .rs1(rs1),
-    .rs2(rs2),
-    .rd(rd)
+    .rs1(rs1),   // directly to regfile
+    .rs2(rs2),   // directly to regfile
+    .rd(rd_out)  // to control_rom
 );
 
-pc_register #(32) PC(
+pc_register PC(
     .clk(clk),
     .rst(rst),
     .load(load_pc),
@@ -79,77 +89,111 @@ pc_register #(32) PC(
     .out(pc_out)
 );
 
-register MDR(
+register MDAR(
     .clk(clk),
     .rst(rst),
-    .load(load_mdr),
-    .in(mem_rdata),
-    .out(mdrreg_out)
+    .load(1'b1),
+    .in(alu_out),
+    .out(d_addr)
 );
 
-register MAR(
+register MWDR(
     .clk(clk),
     .rst(rst),
-    .load(load_mar),
-    .in(marmux_out),
-    .out(mem_address)
+    .load(1'b1),
+    .in(rs2_out),
+    .out(d_wdata)
 );
 
-register mem_data_out(
+register regfile_imm(
     .clk(clk),
     .rst(rst),
-    .load(load_data_out),
-    .in(mem_data_out_in),
-    .out(mem_wdata)
+    .load(load_regfile_imm),
+    .in(regfilemux_out),
+    .out(regfile_in)
 );
+
+register alu_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(1'b1),
+    .in(alumux1_out),
+    .out(alu_in1)
+);
+
+register alu_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(1'b1),
+    .in(alumux2_out),
+    .out(alu_in2)
+);
+
+register cmp_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(1'b1),
+    .in(cmpmux_out),
+    .out(cmp_in1)
+);
+
+register cmp_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(1'b1),
+    .in(rs1_out),
+    .out(cmp_in2)
+);
+
+// ================================ Regfile, ALU and CMP ================================
 
 regfile regfile(
     .clk(clk),
     .rst(rst),
     .load(load_regfile),
-    .in(regfilemux_out),
-    .src_a(rs1),
-    .src_b(rs2),
-    .dest(rd),
+    .in(regfile_in),
+    .src_a(rs1),   // directly from IR
+    .src_b(rs2),   // directly from IR
+    .dest(rd_in),  // from control word
     .reg_a(rs1_out),
     .reg_b(rs2_out)
 );
-/*****************************************************************************/
 
-/******************************* ALU and CMP *********************************/
 alu alu(
     .aluop(aluop),
-    .a(alumux1_out),
-    .b(alumux2_out),
+    .a(alu_in1),
+    .b(alu_in2),
     .f(alu_out)
 );
-assign alu_out_2lsb = alu_out[1:0];
 
 cmp cmp(
     .cmpop(cmpop),
-    .a(rs1_out),
-    .b(cmpmux_out),
+    .a(cmp_in2),  // rs1_out
+    .b(cmp_in1),  // cmpmux_out
     .f(br_en)
 );
-/*****************************************************************************/
 
-/******************************** Muxes **************************************/
+// ================================ MUXes ================================
+
 always_comb begin : MUXES
-    // We provide one (incomplete) example of a mux instantiated using
-    // a case statement.  Using enumerated types rather than bit vectors
+
+    // Using enumerated types rather than bit vectors
     // provides compile time type safety.  Defensive programming is extremely
     // useful in SystemVerilog.  In this case, we actually use
     // Offensive programming --- making simulation halt with a fatal message
     // warning when an unexpected mux select value occurs
 
     // pcmux
-    pcmux_out = 32'hXXXXXXXX;
-    unique case (pcmux_sel)
-        pcmux::pc_plus4: pcmux_out = pc_out + 4;
-        pcmux::alu_out:  pcmux_out = alu_out;
-        pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
-        default: `BAD_MUX_SEL;
-    endcase
+    if (use_br_en & br_en) begin
+        // A BR instruction is in EX state and the branch is taken, use this address as next PC
+        unique case (pcmux_sel)
+            pcmux::alu_out:  pcmux_out = alu_out;
+            pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
+            default: `BAD_MUX_SEL;
+        endcase
+    end else begin
+        pcmux_out = pc_out + 4;
+    end
 
     // alumux1
     unique case (alumux1_sel)
@@ -175,45 +219,12 @@ always_comb begin : MUXES
         regfilemux::alu_out:  regfilemux_out = alu_out;
         regfilemux::br_en:    regfilemux_out = br_en;
         regfilemux::u_imm:    regfilemux_out = u_imm;
-        regfilemux::lw:       regfilemux_out = mdrreg_out;
         regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
-        regfilemux::lb: begin
-            unique case (mem_shift_amount)
-                2'b00: regfilemux_out = {{24{mdrreg_out[7]}}, mdrreg_out[7:0]};
-                2'b01: regfilemux_out = {{24{mdrreg_out[15]}}, mdrreg_out[15:8]};
-                2'b10: regfilemux_out = {{24{mdrreg_out[23]}}, mdrreg_out[23:16]};
-                2'b11: regfilemux_out = {{24{mdrreg_out[31]}}, mdrreg_out[31:24]};
-            endcase
-        end
-        regfilemux::lbu: begin
-            unique case (mem_shift_amount)
-                2'b00: regfilemux_out = {{24{1'b0}}, mdrreg_out[7:0]};
-                2'b01: regfilemux_out = {{24{1'b0}}, mdrreg_out[15:8]};
-                2'b10: regfilemux_out = {{24{1'b0}}, mdrreg_out[23:16]};
-                2'b11: regfilemux_out = {{24{1'b0}}, mdrreg_out[31:24]};
-            endcase
-        end
-        regfilemux::lh: begin
-            unique case (mem_shift_amount)
-                2'b00: regfilemux_out = {{16{mdrreg_out[15]}}, mdrreg_out[15:0]};
-                2'b10: regfilemux_out = {{16{mdrreg_out[31]}}, mdrreg_out[31:16]};
-                default: $fatal("%0t %s %0d: lh addr not aligned", $time, `__FILE__, `__LINE__);
-            endcase
-        end      
-        regfilemux::lhu: begin
-            unique case (mem_shift_amount)
-                2'b00: regfilemux_out = {{16{1'b0}}, mdrreg_out[15:0]};
-                2'b10: regfilemux_out = {{16{1'b0}}, mdrreg_out[31:16]};
-                default: $fatal("%0t %s %0d: lhu addr not aligned", $time, `__FILE__, `__LINE__);
-            endcase
-        end
-        default: `BAD_MUX_SEL;
-    endcase
-
-    // marmux
-    unique case (marmux_sel)
-        marmux::pc_out:  marmux_out = pc_out;
-        marmux::alu_out: marmux_out = {alu_out[31:2], 2'b00};  // align by 4 bytes
+        regfilemux::lw:       regfilemux_out = mem_rdata;
+        regfilemux::lb:       regfilemux_out = {{24{mem_rdata[7]}}, mem_rdata[7:0]};
+        regfilemux::lbu:      regfilemux_out = {24'b0, mem_rdata[7:0]};
+        regfilemux::lh:       regfilemux_out = {{16{mem_rdata[15]}}, mem_rdata[15:0]};
+        regfilemux::lhu:      regfilemux_out = {16'b0, mem_rdata[15:0]};
         default: `BAD_MUX_SEL;
     endcase
 
@@ -224,14 +235,6 @@ always_comb begin : MUXES
         default: `BAD_MUX_SEL;
     endcase
 
-    // Here we need to use alu_out since mem_data_out_load happens in the same cycle of calc_addr
-    unique case (alu_out_2lsb)  
-        2'b00: mem_data_out_in = rs2_out;
-        2'b01: mem_data_out_in = {rs2_out[23:0], 8'b0};
-        2'b10: mem_data_out_in = {rs2_out[15:0], 16'b0};
-        2'b11: mem_data_out_in = {rs2_out[7:0], 24'b0};
-        default: mem_data_out_in = rs2_out;
-    endcase
 end
-/*****************************************************************************/
+
 endmodule : datapath

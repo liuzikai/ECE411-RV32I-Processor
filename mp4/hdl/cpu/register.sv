@@ -1,7 +1,4 @@
-/* DO NOT MODIFY. WILL BE OVERRIDDEN BY THE AUTOGRADER. */
-
-module register #(parameter width = 32)
-(
+module register #(parameter width = 32) (
     input clk,
     input rst,
     input load,
@@ -11,24 +8,17 @@ module register #(parameter width = 32)
 
 logic [width-1:0] data = 1'b0;
 
-always_ff @(posedge clk)
-begin
-    if (rst)
-    begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         data <= '0;
-    end
-    else if (load)
-    begin
+    end else if (load) begin
         data <= in;
-    end
-    else
-    begin
+    end else begin
         data <= data;
     end
 end
 
-always_comb
-begin
+always_comb begin
     out = data;
 end
 

@@ -1,9 +1,6 @@
-/* DO NOT MODIFY. WILL BE OVERRIDDEN BY THE AUTOGRADER. */
-
 import rv32i_types::*;
 
-module ir
-(
+module ir (
     input clk,
     input rst,
     input load,
@@ -35,18 +32,12 @@ assign rs1 = data[19:15];
 assign rs2 = data[24:20];
 assign rd = data[11:7];
 
-always_ff @(posedge clk)
-begin
-    if (rst)
-    begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         data <= '0;
-    end
-    else if (load == 1)
-    begin
+    end else if (load == 1) begin
         data <= in;
-    end
-    else
-    begin
+    end else begin
         data <= data;
     end
 end
