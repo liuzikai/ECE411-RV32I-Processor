@@ -84,19 +84,37 @@ typedef struct packed {
     logic load_ir;
     logic load_regfile;
     logic load_mdar;
-    logic load_mddr;
+    // logic load_mddr;
     logic load_data_out;
 
     pcmux::pcmux_sel_t pcmux_sel;
-    branch_funct3_t cmpop;
     alumux::alumux1_sel_t alumux1_sel;
     alumux::alumux2_sel_t alumux2_sel;
     regfilemux::regfilemux_sel_t regfilemux_sel;
     marmux::marmux_sel_t marmux_sel;
     cmpmux::cmpmux_sel_t cmpmux_sel;
     alu_ops aluop;
+    branch_funct3_t cmpop;
+    
 
-    logic [1:0] mem_shift_amount;
+    // memory signal
+    logic use_br_en;
+    logic i_read;
+    logic d_read;
+    logic d_write;
+    logic mem_read;
+    logic mem_write;
+    // register value 
+    // logic [4:0] rs1;
+    // logic [4:0] rs2;
+    logic [4:0] rd;
+
+    //========== intermediate register signal =======
+    logic alu_in1_ld;
+    logic alu_in2_ld;
+    logic cmp_in1_ld;
+    logic cmp_in2_ld;
+    logic regfile_load_in;
 
 } rv32i_control_word;
 
