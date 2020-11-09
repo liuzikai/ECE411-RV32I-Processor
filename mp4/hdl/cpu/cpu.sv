@@ -22,6 +22,9 @@ module cpu (
 
     // ================================ Internal Wires ================================
 
+    // control_rom -> control_words
+    rv32i_control_word new_control_word;
+
     // Unaligned data channel signals, datapath <-> d_align
     rv32i_word  raw_d_addr;
     rv32i_word  raw_d_rdata;
@@ -30,36 +33,44 @@ module cpu (
 
     // Instruction channel must be aligned
 
-    // control -> datapath
-    
+    // control_words -> datapath
+
+    cmpmux::cmpmux_sel_t cmpmux_sel;
     alumux::alumux1_sel_t alumux1_sel;
     alumux::alumux2_sel_t alumux2_sel;
-    regfilemux::regfilemux_sel_t regfilemux_sel;
-    cmpmux::cmpmux_sel_t cmpmux_sel;
-    pcmux::pcmux_sel_t pcmux_sel;
 
     alu_ops aluop;
     branch_funct3_t cmpop;
-    logic load_regfile;
-    rv32i_reg rd_in;
+    pcmux::pcmux_sel_t pcmux_sel;
 
-    logic use_br_en;
+    // d_read, d_write, d_byte_enable directly linked to output
+    regfilemux::regfilemux_sel_t regfilemux_sel;
+    
+    logic regfile_wb;
+    rv32i_reg regfile_rd;
+
+    logic stall;
 
     // ================================ Modules ================================
 
-    datapath datapath(
+    control_rom control_rom(
+        .opcode(rv32i_opcode'(i_rdata[6:0])),
+        .funct3(i_rdata[14:12]),
+        .funct7(i_rdata[31:25]),
+        .rd(i_rdata[11:7]),
+        .ctrl(new_control_word)
+    );
 
+    control_words control_words(
+        .*
+    );
+
+    datapath datapath(
         // Not using the following signals for now
         .opcode(),
         .funct3(),
         .funct7(),
         .rd_out(),
-        .br_en(),
-
-        // Always load for now, assumping memory can keep supplying data
-        .load_pc(1'b1),
-        .load_ir(1'b1),
-        .load_regfile_imm(1'b1),
 
         // Unaligned data channel
         .d_addr(raw_d_addr),

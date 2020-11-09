@@ -13,9 +13,8 @@ module datapath(
     output rv32i_reg rd_out,
 
     // Signals to intermediate registers
-    input logic load_pc,
-    input logic load_ir,
-    input logic load_regfile_imm,
+    // All use ~stall for now
+    input logic stall,
 
     // Signals from control words to MUXes
     input alumux::alumux1_sel_t alumux1_sel,
@@ -27,8 +26,8 @@ module datapath(
     // Signals to ALU, CMP and regfile
     input alu_ops aluop,
     input branch_funct3_t cmpop,
-    input logic load_regfile,
-    input rv32i_reg rd_in,
+    input logic regfile_wb,
+    input rv32i_reg regfile_rd,
 
     // Signals to I-Cache
     output rv32i_word i_addr,
@@ -38,21 +37,24 @@ module datapath(
     output rv32i_word d_addr,
     input  rv32i_word d_rdata,
     output rv32i_word d_wdata,
-
-    // Signals for branch control
-    input  logic use_br_en,
-    output logic br_en
-    // TODO: more signals to add in order to support flush and branch prediction
 );
 
 // ================================ Internal signals ================================
 
-rv32i_reg rs1, rs2;  // directly connected from IR to regfile, since it is used directly in the ID stage
-
-rv32i_word rs1_out, rs2_out;
+// Output of IR
+rv32i_reg rs1, rs2;  // not used now, as regfile connected directly from i_rdata
 rv32i_word i_imm, u_imm, b_imm, s_imm, j_imm;
-rv32i_word alu_out, pc_out;
 
+// Output of Regfile
+rv32i_word rs1_out, rs2_out;
+
+// Output of ALU
+rv32i_word alu_out;
+
+// Output of PC and chained intermediate registers
+rv32i_word pc_out, pc_imm1_out, pc_imm2_out;
+
+// Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2;
 pcmux::pcmux_sel_t pcmux_sel;
 
@@ -66,7 +68,7 @@ assign i_addr = pc_out;
 ir IR(
     .clk(clk),
     .rst(rst),
-    .load(load_ir),
+    .load(~stall),
     .in(i_rdata),
     .funct3(funct3),
     .funct7(funct7),
@@ -76,23 +78,39 @@ ir IR(
     .b_imm(b_imm),
     .s_imm(s_imm),
     .j_imm(j_imm),
-    .rs1(rs1),   // directly to regfile
-    .rs2(rs2),   // directly to regfile
+    .rs1(rs1),   // not used now
+    .rs2(rs2),   // not used now
     .rd(rd_out)  // to control_rom
 );
 
 pc_register PC(
     .clk(clk),
     .rst(rst),
-    .load(load_pc),
+    .load(~stall),
     .in(pcmux_out),
     .out(pc_out)
+);
+
+register pc_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall),
+    .in(pc_out),
+    .out(pc_imm1_out)
+);
+
+register pc_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall),
+    .in(pc_imm1_out),
+    .out(pc_imm2_out)
 );
 
 register MDAR(
     .clk(clk),
     .rst(rst),
-    .load(1'b1),
+    .load(~stall),
     .in(alu_out),
     .out(d_addr)
 );
@@ -100,7 +118,7 @@ register MDAR(
 register MWDR(
     .clk(clk),
     .rst(rst),
-    .load(1'b1),
+    .load(~stall),
     .in(rs2_out),
     .out(d_wdata)
 );
@@ -108,7 +126,7 @@ register MWDR(
 register regfile_imm(
     .clk(clk),
     .rst(rst),
-    .load(load_regfile_imm),
+    .load(~stall),
     .in(regfilemux_out),
     .out(regfile_in)
 );
@@ -116,7 +134,7 @@ register regfile_imm(
 register alu_imm1(
     .clk(clk),
     .rst(rst),
-    .load(1'b1),
+    .load(~stall),
     .in(alumux1_out),
     .out(alu_in1)
 );
@@ -124,7 +142,7 @@ register alu_imm1(
 register alu_imm2(
     .clk(clk),
     .rst(rst),
-    .load(1'b1),
+    .load(~stall),
     .in(alumux2_out),
     .out(alu_in2)
 );
@@ -132,7 +150,7 @@ register alu_imm2(
 register cmp_imm1(
     .clk(clk),
     .rst(rst),
-    .load(1'b1),
+    .load(~stall),
     .in(cmpmux_out),
     .out(cmp_in1)
 );
@@ -140,7 +158,7 @@ register cmp_imm1(
 register cmp_imm2(
     .clk(clk),
     .rst(rst),
-    .load(1'b1),
+    .load(~stall),
     .in(rs1_out),
     .out(cmp_in2)
 );
@@ -150,11 +168,11 @@ register cmp_imm2(
 regfile regfile(
     .clk(clk),
     .rst(rst),
-    .load(load_regfile),
+    .load(regfile_wb),
     .in(regfile_in),
-    .src_a(rs1),   // directly from IR
-    .src_b(rs2),   // directly from IR
-    .dest(rd_in),  // from control word
+    .src_a(i_rdata[19:15]),   // directly from i_rdata
+    .src_b(i_rdata[24:20]),   // directly from i_rdata
+    .dest(regfile_rd),        // from control word
     .reg_a(rs1_out),
     .reg_b(rs2_out)
 );
@@ -184,21 +202,18 @@ always_comb begin : MUXES
     // warning when an unexpected mux select value occurs
 
     // pcmux
-    if (use_br_en & br_en) begin
-        // A BR instruction is in EX state and the branch is taken, use this address as next PC
-        unique case (pcmux_sel)
-            pcmux::alu_out:  pcmux_out = alu_out;
-            pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
-            default: `BAD_MUX_SEL;
-        endcase
-    end else begin
-        pcmux_out = pc_out + 4;
-    end
+    unique case (pcmux_sel)
+        pcmux::pc_plus4: pcmux_out = pc_out + 4;
+        pcmux::br:       pcmux_out = (br_en ? alu_out : pc_out + 4);
+        pcmux::alu_out:  pcmux_out = alu_out;
+        pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
+        default: `BAD_MUX_SEL;
+    endcase
 
     // alumux1
     unique case (alumux1_sel)
         alumux::rs1_out: alumux1_out = rs1_out;
-        alumux::pc_out:  alumux1_out = pc_out;
+        alumux::pc_out:  alumux1_out = pc_imm2_out;  // need to get data from PC chain
         default: `BAD_MUX_SEL;
     endcase
 

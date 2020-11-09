@@ -1,15 +1,10 @@
 package pcmux;
-typedef enum bit {
-    alu_out  = 2'b01
-    ,alu_mod2 = 2'b10
+typedef enum bit [1:0] {
+    pc_plus4 = 2'b00
+    ,br = 2'b01
+    ,alu_out  = 2'b10
+    ,alu_mod2 = 2'b11
 } pcmux_sel_t;
-endpackage
-
-package marmux;
-typedef enum bit {
-    pc_out = 1'b0
-    ,alu_out = 1'b1
-} marmux_sel_t;
 endpackage
 
 package cmpmux;

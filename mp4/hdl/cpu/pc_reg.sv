@@ -11,8 +11,7 @@ module pc_register #(parameter width = 32) (
  */
 logic [width-1:0] data;
 
-always_ff @(posedge clk)
-begin
+always_ff @(posedge clk) begin
     if (rst) begin
         data <= 32'h00000060;
     end else if (load) begin
