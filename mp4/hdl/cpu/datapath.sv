@@ -36,7 +36,7 @@ module datapath(
     // Signals to D-Cache
     output rv32i_word d_addr,
     input  rv32i_word d_rdata,
-    output rv32i_word d_wdata,
+    output rv32i_word d_wdata
 );
 
 // ================================ Internal signals ================================
@@ -235,11 +235,11 @@ always_comb begin : MUXES
         regfilemux::br_en:    regfilemux_out = br_en;
         regfilemux::u_imm:    regfilemux_out = u_imm;
         regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
-        regfilemux::lw:       regfilemux_out = mem_rdata;
-        regfilemux::lb:       regfilemux_out = {{24{mem_rdata[7]}}, mem_rdata[7:0]};
-        regfilemux::lbu:      regfilemux_out = {24'b0, mem_rdata[7:0]};
-        regfilemux::lh:       regfilemux_out = {{16{mem_rdata[15]}}, mem_rdata[15:0]};
-        regfilemux::lhu:      regfilemux_out = {16'b0, mem_rdata[15:0]};
+        regfilemux::lw:       regfilemux_out = d_rdata;
+        regfilemux::lb:       regfilemux_out = {{24{d_rdata[7]}}, d_rdata[7:0]};
+        regfilemux::lbu:      regfilemux_out = {24'b0, d_rdata[7:0]};
+        regfilemux::lh:       regfilemux_out = {{16{d_rdata[15]}}, d_rdata[15:0]};
+        regfilemux::lhu:      regfilemux_out = {16'b0, d_rdata[15:0]};
         default: `BAD_MUX_SEL;
     endcase
 

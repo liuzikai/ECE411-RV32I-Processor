@@ -57,7 +57,7 @@ assign d_byte_enable = EX_MEM.d_byte_enable;
 assign regfilemux_sel = EX_MEM.regfilemux_sel;
 
 // MEM-WB
-assign regfile_wb = MEM_WB.regfile_wb;  // no need to consider stall?
+assign regfile_wb = MEM_WB.regfile_wb;
 assign regfile_rd = MEM_WB.regfile_rd;
 
 assign stall = (!i_cache_resp) || (!d_ready_next);

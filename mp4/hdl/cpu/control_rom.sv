@@ -107,7 +107,6 @@ always_comb begin
         op_store: begin  // store (S type)
             setALU(alumux::rs1_out, alumux::s_imm, alu_add);
             ctrl.d_write = 1'b1; 
-            // FIXME: d_byte_enable-Fixed
             unique case(store_funct3_t'(funct3))
                 sb : ctrl.d_byte_enable = 4'b0001; 
                 sh : ctrl.d_byte_enable = 4'b0011;
