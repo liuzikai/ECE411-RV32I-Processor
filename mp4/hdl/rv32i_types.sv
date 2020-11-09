@@ -3,7 +3,6 @@ package rv32i_types;
 // e.g. pcmux::pc_plus4 and regfilemux::pc_plus4 are seperate identifiers
 // for seperate enumerated types
 import pcmux::*;
-import marmux::*;
 import cmpmux::*;
 import alumux::*;
 import regfilemux::*;

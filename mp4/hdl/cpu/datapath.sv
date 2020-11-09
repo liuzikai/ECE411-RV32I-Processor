@@ -51,14 +51,16 @@ rv32i_word rs1_out, rs2_out;
 // Output of ALU
 rv32i_word alu_out;
 
+// Output of CMP
+logic br_en;
+
 // Output of PC and chained intermediate registers
 rv32i_word pc_out, pc_imm1_out, pc_imm2_out;
 
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2;
-pcmux::pcmux_sel_t pcmux_sel;
 
-rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out;
+rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out, pcmux_out;
 
 assign i_addr = pc_out;
 

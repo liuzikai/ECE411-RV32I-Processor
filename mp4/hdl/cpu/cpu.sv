@@ -62,6 +62,7 @@ module cpu (
     );
 
     control_words control_words(
+        .d_byte_enable(raw_d_byte_enable),
         .*
     );
 
@@ -90,5 +91,7 @@ module cpu (
         .mem_wdata(d_wdata),
         .mem_byte_enable(d_byte_enable)
     );
+
+    assign i_read = 1'b1;
 
 endmodule : cpu

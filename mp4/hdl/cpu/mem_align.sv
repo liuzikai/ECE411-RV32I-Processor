@@ -3,7 +3,7 @@
 
 import rv32i_types::*;
 
-module mem_align(
+module mem_align (
 
     // Unaligned signals from upstream
     input  rv32i_word  raw_addr,
@@ -20,7 +20,8 @@ module mem_align(
 
 assign mem_addr = {raw_addr[31:2], 2'b00};  // align by 4 bytes
 
-unique case (raw_addr[1:0])  
+always_comb begin
+    unique case (raw_addr[1:0])  
     2'b00: begin
         mem_wdata = raw_wdata;
         mem_byte_enable = raw_byte_enable;
@@ -44,5 +45,6 @@ unique case (raw_addr[1:0])
         raw_rdata = {24'b0, mem_rdata[31:24]};
     end
 endcase
+end
 
-endmodule
+endmodule : mem_align

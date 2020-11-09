@@ -60,7 +60,7 @@ assign regfilemux_sel = EX_MEM.regfilemux_sel;
 assign regfile_wb = MEM_WB.regfile_wb;
 assign regfile_rd = MEM_WB.regfile_rd;
 
-assign stall = (!i_cache_resp) || (!d_ready_next);
+assign stall = (!i_resp) || (!d_ready_next);
 
 logic [3:0] flush_list;
 logic d_ready, d_ready_next;
@@ -71,8 +71,8 @@ always_comb begin
     FLUSH.opcode = op_none;
     FLUSH.alumux1_sel = alumux::alumux1_sel_t'(1'b0);
     FLUSH.alumux2_sel = alumux::alumux2_sel_t'(3'b000);
-    FLUSH.regfilemux_sel = regfilemux_sel_t'(4'b0000);
-    FLUSH.cmpmux_sel = cmpmux'(1'b0);
+    FLUSH.regfilemux_sel = regfilemux::regfilemux_sel_t'(4'b0000);
+    FLUSH.cmpmux_sel = cmpmux::cmpmux_sel_t'(1'b0);
     FLUSH.aluop = alu_ops'(3'b000);
     FLUSH.cmpop = branch_funct3_t'(3'b000);
     FLUSH.pcmux_sel = pcmux::pc_plus4;
@@ -110,7 +110,7 @@ always_ff @(posedge clk) begin
         ID_EX <= (flush_list[1]) ? FLUSH : IF_ID;
         EX_MEM <= (flush_list[2]) ? FLUSH : ID_EX;
         MEM_WB <= (flush_list[3]) ? FLUSH : EX_MEM;
-        d_ready <= 1'b0;  // FIXME: synchronized? Must stall for at least one cycle?
+        d_ready <= 1'b0;
     end
 end
 

@@ -73,7 +73,6 @@ always_comb begin
             loadRegfile(regfilemux::alu_out);
         end
         op_lui: begin  // load upper immediate (U type)
-            loadPC(pcmux::pc_plus4);
             loadRegfile(regfilemux::u_imm);
         end
         op_jal: begin  // jump and link (J type)
@@ -88,7 +87,6 @@ always_comb begin
         end
         op_br: begin  // branch (B type)
             setALU(alumux::pc_out, alumux::b_imm, alu_add);
-            ctrl.cmpop = branch_funct3_t'(funct3);
             loadPC(pcmux::br);
         end
         op_load: begin  // load (I type)
@@ -111,7 +109,7 @@ always_comb begin
                 sb : ctrl.d_byte_enable = 4'b0001; 
                 sh : ctrl.d_byte_enable = 4'b0011;
                 sw : ctrl.d_byte_enable = 4'b1111;
-                default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
+                default: $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
             endcase
         end
         op_imm: begin  // arith ops with register/immediate operands (I type)
