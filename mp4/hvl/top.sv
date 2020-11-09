@@ -1,4 +1,4 @@
-module mp3_tb;
+module mp4_tb;
 `timescale 1ns/10ps
 
 /********************* Do not touch for proper compilation *******************/
@@ -104,18 +104,18 @@ mp4 dut(
     .clk(itf.clk),
     .rst(itf.rst),
 
-    .i_addr(ift.inst_addr),
-    .i_rdata(ift.inst_rdata),
-    .i_read(ift.inst_read),
-    .i_resp(ift.inst_resp),
+    .i_addr(itf.inst_addr),
+    .i_rdata(itf.inst_rdata),
+    .i_read(itf.inst_read),
+    .i_resp(itf.inst_resp),
 
-    .d_addr(ift.data_addr),
-    .d_rdata(ift.data_rdata),
-    .d_wdata(ift.data_wdata),
-    .d_byte_enable(ift.data_mbe),
-    .d_read(ift.data_read),
-    .d_write(ift.data_write),
-    .d_resp(ift.data_resp)
+    .d_addr(itf.data_addr),
+    .d_rdata(itf.data_rdata),
+    .d_wdata(itf.data_wdata),
+    .d_byte_enable(itf.data_mbe),
+    .d_read(itf.data_read),
+    .d_write(itf.data_write),
+    .d_resp(itf.data_resp)
 );
 /***************************** End Instantiation *****************************/
 

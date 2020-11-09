@@ -40,6 +40,9 @@ module control_words
 rv32i_control_word IF_ID, ID_EX, EX_MEM, MEM_WB;  // control word register
 rv32i_control_word FLUSH;  // constant
 
+logic [3:0] flush_list;
+logic d_ready, d_ready_next;
+
 // IF-ID
 assign cmpmux_sel = IF_ID.cmpmux_sel;
 assign alumux1_sel = IF_ID.alumux1_sel;
@@ -61,9 +64,6 @@ assign regfile_wb = MEM_WB.regfile_wb;
 assign regfile_rd = MEM_WB.regfile_rd;
 
 assign stall = (!i_resp) || (!d_ready_next);
-
-logic [3:0] flush_list;
-logic d_ready, d_ready_next;
 
 assign flush_list = 4'b0000;
 

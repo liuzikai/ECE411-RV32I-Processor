@@ -1,3 +1,5 @@
+import rv32i_types::*;
+
 module mp4(
     input clk,
     input rst,
@@ -18,6 +20,6 @@ module mp4(
     input  logic       d_resp
 );
 
-    cpu cpu(.*);
+cpu cpu(.*);
 
 endmodule : mp4

@@ -42,7 +42,7 @@ module datapath(
 // ================================ Internal signals ================================
 
 // Output of IR
-rv32i_reg rs1, rs2;  // not used now, as regfile connected directly from i_rdata
+rv32i_reg rs1, rs2;
 rv32i_word i_imm, u_imm, b_imm, s_imm, j_imm;
 
 // Output of Regfile
@@ -55,10 +55,10 @@ rv32i_word alu_out;
 logic br_en;
 
 // Output of PC and chained intermediate registers
-rv32i_word pc_out, pc_imm1_out, pc_imm2_out;
+rv32i_word pc_out, pc_imm1_out;
 
 // Output of intermediate registers
-rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2;
+rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out;
 
 rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out, pcmux_out;
 
@@ -80,8 +80,8 @@ ir IR(
     .b_imm(b_imm),
     .s_imm(s_imm),
     .j_imm(j_imm),
-    .rs1(rs1),   // not used now
-    .rs2(rs2),   // not used now
+    .rs1(rs1),   // to IR
+    .rs2(rs2),   // to IR
     .rd(rd_out)  // to control_rom
 );
 
@@ -99,14 +99,6 @@ register pc_imm1(
     .load(~stall),
     .in(pc_out),
     .out(pc_imm1_out)
-);
-
-register pc_imm2(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall),
-    .in(pc_imm1_out),
-    .out(pc_imm2_out)
 );
 
 register MDAR(
@@ -149,6 +141,14 @@ register alu_imm2(
     .out(alu_in2)
 );
 
+register alu_wb_imm(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall),
+    .in(alu_out),
+    .out(alu_wb_imm_out)
+);
+
 register cmp_imm1(
     .clk(clk),
     .rst(rst),
@@ -172,9 +172,9 @@ regfile regfile(
     .rst(rst),
     .load(regfile_wb),
     .in(regfile_in),
-    .src_a(i_rdata[19:15]),   // directly from i_rdata
-    .src_b(i_rdata[24:20]),   // directly from i_rdata
-    .dest(regfile_rd),        // from control word
+    .src_a(rs1),        // directly from IR
+    .src_b(rs2),        // directly from IR
+    .dest(regfile_rd),  // from control word
     .reg_a(rs1_out),
     .reg_b(rs2_out)
 );
@@ -215,7 +215,7 @@ always_comb begin : MUXES
     // alumux1
     unique case (alumux1_sel)
         alumux::rs1_out: alumux1_out = rs1_out;
-        alumux::pc_out:  alumux1_out = pc_imm2_out;  // need to get data from PC chain
+        alumux::pc_out:  alumux1_out = pc_imm1_out;  // need to get data from PC chain
         default: `BAD_MUX_SEL;
     endcase
 
@@ -233,7 +233,7 @@ always_comb begin : MUXES
     // regfilemux
     regfilemux_out = 32'hXXXXXXXX;
     unique case (regfilemux_sel)
-        regfilemux::alu_out:  regfilemux_out = alu_out;
+        regfilemux::alu_out:  regfilemux_out = alu_wb_imm_out;
         regfilemux::br_en:    regfilemux_out = br_en;
         regfilemux::u_imm:    regfilemux_out = u_imm;
         regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
