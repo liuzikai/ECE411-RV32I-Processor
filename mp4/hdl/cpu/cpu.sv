@@ -22,9 +22,6 @@ module cpu (
 
     // ================================ Internal Wires ================================
 
-    // control_rom -> control_words
-    rv32i_control_word new_control_word;
-
     // Unaligned data channel signals, datapath <-> d_align
     rv32i_word  raw_d_addr;
     rv32i_word  raw_d_rdata;
@@ -53,15 +50,8 @@ module cpu (
 
     // ================================ Modules ================================
 
-    control_rom control_rom(
-        .opcode(rv32i_opcode'(i_rdata[6:0])),
-        .funct3(i_rdata[14:12]),
-        .funct7(i_rdata[31:25]),
-        .rd(i_rdata[11:7]),
-        .ctrl(new_control_word)
-    );
-
-    control_words control_words(
+    control control(
+        .instruction(i_rdata),
         .d_byte_enable(raw_d_byte_enable),
         .*
     );

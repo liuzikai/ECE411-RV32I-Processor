@@ -2,13 +2,13 @@
 `define BAD_OPCODE $fatal("%0t %s %0d: Illegal opcode", $time, `__FILE__, `__LINE__)
 import rv32i_types::*; /* Import types defined in rv32i_types.sv */
 
-module control_words
+module control
 (
     input clk,
     input rst,
 
-    // New control word
-    input rv32i_control_word new_control_word,
+    // IR for control word
+    input rv32i_word instruction,
 
     // IF-ID
     output cmpmux::cmpmux_sel_t cmpmux_sel,
@@ -37,7 +37,7 @@ module control_words
     output logic stall
 );
 
-rv32i_control_word IF_ID, ID_EX, EX_MEM, MEM_WB;  // control word register
+rv32i_control_word new_control_word, IF_ID, ID_EX, EX_MEM, MEM_WB;  // control word register
 rv32i_control_word FLUSH;  // constant
 
 logic [3:0] flush_list;
@@ -66,6 +66,14 @@ assign regfile_rd = MEM_WB.regfile_rd;
 assign stall = (!i_resp) || (!d_ready_next);
 
 assign flush_list = 4'b0000;
+
+control_rom control_rom(
+    .opcode(rv32i_opcode'(instruction[6:0])),
+    .funct3(instruction[14:12]),
+    .funct7(instruction[31:25]),
+    .rd(instruction[11:7]),
+    .ctrl(new_control_word)
+);
 
 always_comb begin
     FLUSH.opcode = op_none;
@@ -114,4 +122,4 @@ always_ff @(posedge clk) begin
     end
 end
 
-endmodule : control_words
+endmodule : control
