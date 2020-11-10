@@ -1,4 +1,4 @@
-module mp3_tb;
+module mp4_tb;
 `timescale 1ns/10ps
 
 /********************* Do not touch for proper compilation *******************/
@@ -14,6 +14,11 @@ source_tb tb(
     .tb_itf(itf),
     .rvfi(rvfi)
 );
+
+// For local simulation, add signal for Modelsim to display by default
+// Note that this signal does nothing and is not used for anything
+bit f;
+
 /****************************** End do not touch *****************************/
 
 /************************ Signals necessary for monitor **********************/
