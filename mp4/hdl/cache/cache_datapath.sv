@@ -1,7 +1,3 @@
-/* MODIFY. The cache datapath. It contains the data,
-valid, dirty, tag, and LRU arrays, comparators, muxes,
-logic gates and other supporting logic. */
-
 `define BAD_MUX_SEL $fatal("%0t %s %0d: Illegal mux select", $time, `__FILE__, `__LINE__)
 
 module cache_datapath #(
@@ -27,7 +23,7 @@ module cache_datapath #(
     // cache_datapath <-> cacheline_adapter
     output logic [255:0] ca_wdata,
     input  logic [255:0] ca_rdata,
-    output logic [31:0]  ca_addr,
+    output logic [31:0]  ca_address,
 
     // datapath -> control
     output logic hit,
@@ -39,8 +35,7 @@ module cache_datapath #(
     // control -> datapath
     input logic load_tag[2],
 
-    input logic valid_in[2],
-    input logic load_valid[2],
+    input logic set_valid[2],
 
     input logic lru_in,
     input logic load_lru,
@@ -50,9 +45,6 @@ module cache_datapath #(
 
     input datamux::datamux_sel_t datamux_sel,
     input logic load_data[2],
-
-    input logic upstream_way,
-    input logic downstream_way,
 
     input addrmux::addrmux_sel_t addrmux_sel
 );
@@ -83,10 +75,9 @@ generate
 
         // Arrays will be reset to all 0 with rst
 
-        array #(s_index, s_tag) tag_array (
+        comb_array #(s_index, s_tag) tag_array (
             .clk(clk),
             .rst(rst),
-            .read(1'b1),  // always read
             .load(load_tag[i]),
             .rindex(set_index),
             .windex(set_index),
@@ -94,21 +85,19 @@ generate
             .dataout(tag_out[i])
         );
 
-        array #(s_index, 1) valid_array (
+        comb_array #(s_index, 1) valid_array (
             .clk(clk),
             .rst(rst),
-            .read(1'b1),  // always read
-            .load(load_valid[i]),
+            .load(set_valid[i]),
             .rindex(set_index),
             .windex(set_index),
-            .datain(valid_in[i]),
+            .datain(1'b1),  // no case that we want to clear valid bit
             .dataout(valid_out[i])
         );
 
-        array #(s_index, 1) dirty_array (
+        comb_array #(s_index, 1) dirty_array (
             .clk(clk),
             .rst(rst),
-            .read(1'b1),  // always read
             .load(load_dirty[i]),
             .rindex(set_index),
             .windex(set_index),
@@ -116,10 +105,9 @@ generate
             .dataout(dirty_out[i])
         );
 
-        data_array #(s_offset, s_index) data_array (
+        comb_data_array #(s_offset, s_index) data_array (
             .clk(clk),
             .rst(rst),
-            .read(1'b1),  // always read
             .write_en(data_write_en[i]),
             .rindex(set_index),
             .windex(set_index),
@@ -129,10 +117,9 @@ generate
     end 
 endgenerate
 
-array #(s_index, 1) lru_array (
+comb_array #(s_index, 1) lru_array (
     .clk(clk),
     .rst(rst),
-    .read(1'b1),  // always read
     .load(load_lru),
     .rindex(set_index),
     .windex(set_index),
@@ -180,18 +167,18 @@ always_comb begin : muxes
     end
 
     // Upstream data output
-    mem_rdata256 = data_out[upstream_way];
+    mem_rdata256 = data_out[hit_way];  // set anyway, won't take effect unless mem_resp
     
     // Downstream data output
-    ca_wdata = data_out[downstream_way];
+    ca_wdata = data_out[lru_way];
 
     // Address output to cacheline adapter
     // Align mem_address to 32 bytes and pass to cacheline adapter
     unique case (addrmux_sel)
-        addrmux::mem_addr: ca_addr = {mem_address[31:s_offset], 5'b00000};
-        addrmux::tag0_addr: ca_addr = {tag_out[0], set_index, 5'b00000};
-        addrmux::tag1_addr: ca_addr = {tag_out[1], set_index, 5'b00000};
-        default: ca_addr = {32{1'bX}};
+        addrmux::mem_addr: ca_address = {mem_address[31:s_offset], 5'b00000};
+        addrmux::tag0_addr: ca_address = {tag_out[0], set_index, 5'b00000};
+        addrmux::tag1_addr: ca_address = {tag_out[1], set_index, 5'b00000};
+        default: ca_address = {32{1'bX}};
     endcase
 
 end : muxes

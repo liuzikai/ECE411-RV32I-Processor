@@ -1,7 +1,6 @@
-/* DO NOT MODIFY. WILL BE OVERRIDDEN BY THE AUTOGRADER.
-A module to help your CPU (which likes to deal with 4 bytes
-at a time) talk to your cache (which likes to deal with 32
-bytes at a time).*/
+/* A module to help your CPU (which likes to deal with 4 bytes
+   at a time) talk to your cache (which likes to deal with 32
+   bytes at a time).*/
 
 module bus_adapter
 (

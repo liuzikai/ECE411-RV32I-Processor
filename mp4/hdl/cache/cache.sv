@@ -26,18 +26,15 @@ module cache #(
     input  logic mem_write,
     output logic mem_resp,
 
-    // NOTE: cache module is connected to the cacheline_adapter instead of the
-    //       param_memory, but need to accomodate the autograder...
-
     // cache_datapath <-> cacheline_adapter
-    output logic [255:0] pmem_wdata,    // line_i
-    input  logic [255:0] pmem_rdata,    // line_o
-    output logic [31:0]  pmem_address,  // address_i
+    output logic [255:0] ca_wdata,    // line_i
+    input  logic [255:0] ca_rdata,    // line_o
+    output logic [31:0]  ca_address,  // address_i
 
     // cache_control <-> cacheline_adapter
-    input  logic pmem_resp,          // resp_o
-    output logic pmem_read,          // read_i
-    output logic pmem_write          // write_i
+    input  logic ca_resp,          // resp_o
+    output logic ca_read,          // read_i
+    output logic ca_write          // write_i
 );
 
 // bus_adapter <-> cache_datapath
@@ -55,8 +52,7 @@ logic lru_dirty;
 // control -> datapath
 logic load_tag[2];
 
-logic valid_in[2];
-logic load_valid[2];
+logic set_valid[2];
 
 logic lru_in;
 logic load_lru;
@@ -67,22 +63,13 @@ logic load_dirty[2];
 datamux::datamux_sel_t datamux_sel;
 logic load_data[2];
 
-logic upstream_way;
-logic downstream_way;
-
 addrmux::addrmux_sel_t addrmux_sel;
 
 cache_control control (
-    .ca_resp(pmem_resp),
-    .ca_read(pmem_read),
-    .ca_write(pmem_write),
     .*
 );
 
 cache_datapath datapath (
-    .ca_wdata(pmem_wdata),
-    .ca_rdata(pmem_rdata),
-    .ca_addr(pmem_address),
     .*
 );
 
