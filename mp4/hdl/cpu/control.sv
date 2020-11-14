@@ -37,16 +37,10 @@ module control
     input logic i_resp,
     input logic d_resp,
 
-    output logic ld_pc,
-    output logic ld_mdar,
-    output logic ld_ir,
-    output logic ld_alu_imm,
-    output logic ld_mwdr,
-    output logic ld_mwdr_imm,
-    output logic ld_regfile_imm,
-    output logic ld_cmp_imm,
-    output logic ld_alu_wb_imm,
-    output logic ld_cmp_wb_imm
+    output logic stall_ID,
+    output logic stall_EX,
+    output logic stall_MEM,
+    output logic stall_WB
 );
 
 rv32i_control_word new_control_word, IF_ID, ID_EX, EX_MEM, MEM_WB;  // control word register
@@ -58,16 +52,10 @@ logic [3:0] flush_list;
 logic stall_all, stall_decode;
 logic d_ready, d_ready_next;
 
-assign ld_pc = ~stall_all && ~stall_decode;
-assign ld_mdar = ~stall_all;
-assign ld_ir = ~stall_all && ~stall_decode;
-assign ld_alu_imm = ~stall_all;
-assign ld_mwdr = ~stall_all;
-assign ld_mwdr_imm = ~stall_all;
-assign ld_regfile_imm = ~stall_all;
-assign ld_cmp_imm = ~stall_all;
-assign ld_alu_wb_imm = ~stall_all;
-assign ld_cmp_wb_imm = ~stall_all;
+assign stall_ID = stall_all || stall_decode;
+assign stall_EX = stall_all;
+assign stall_MEM = stall_all;
+assign stall_WB = stall_all;
 
 function void set_defaults();
     // IF-ID
@@ -103,7 +91,7 @@ control_rom control_rom(
     .ctrl(new_control_word)
 );
 
-always_comb begin : new_reg_pack_ASSIGN
+always_comb begin : NEW_REG_PACK_ASSIGN
     new_reg_pack.rs1 = instruction[19:15];
     new_reg_pack.rs2 = instruction[24:20];
     new_reg_pack.rd = instruction[11:7];
@@ -124,7 +112,6 @@ always_comb begin : FLUSH_ASSIGN
     FLUSH.regfile_wb = 1'b0;
     FLUSH.rs1_read = 1'b0;
     FLUSH.rs2_read = 1'b0;
-    FLUSH.rd_write = 1'b0;
 
     FLUSH_reg.rs1 = rv32i_reg'(5'b00000);
     FLUSH_reg.rs2 = rv32i_reg'(5'b00000);
@@ -136,9 +123,9 @@ always_comb begin : MAIN_COMB
     if (ID_EX.opcode == rv32i_opcode::op_br && br_en) begin
         flush_list[1:0] = 2'b11; // Flush the IF_ID and ID_EX control words
     end
-    else if (IF_ID.rs1_read) begin
+    if (IF_ID.rs1_read) begin
         // rs1 should be considered
-        if (ID_EX.rd_write && ID_EX_reg.rd == IF_ID_reg.rs1) begin
+        if (ID_EX.regfile_wb && ID_EX_reg.rd == IF_ID_reg.rs1) begin
             if (EX_MEM.opcode == rv32i_opcode::op_load) begin
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
@@ -147,16 +134,16 @@ always_comb begin : MAIN_COMB
                 alumux1_sel = alumux::alumux1_alumux_out;
             end
         end
-        else if (EX_MEM.rd_write && EX_MEM_reg.rd == IF_ID_reg.rs1) begin
+        else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs1) begin
             alumux1_sel = alumux::alumux1_regfilemux_out;
         end
-        else if (MEM_WB.rd_write && MEM_WB_reg.rd == IF_ID_reg.rs1) begin
+        else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs1) begin
             alumux1_sel = alumux::alumux1_regfile_imm_out;
         end
     end
-    else if (IF_ID.rs2_read) begin
+    if (IF_ID.rs2_read) begin
         // rs2 should be considered
-        if (ID_EX.rd_write && ID_EX_reg.rd == IF_ID_reg.rs2) begin
+        if (ID_EX.regfile_wb && ID_EX_reg.rd == IF_ID_reg.rs2) begin
             if (EX_MEM.opcode == rv32i_opcode::op_load) begin
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
@@ -165,10 +152,10 @@ always_comb begin : MAIN_COMB
                 alumux2_sel = alumux::alumux2_alumux_out;
             end
         end
-        else if (EX_MEM.rd_write && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
+        else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
             alumux2_sel = alumux::alumux2_regfilemux_out;
         end
-        else if (MEM_WB.rd_write && MEM_WB_reg.rd == IF_ID_reg.rs2) begin
+        else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs2) begin
             alumux2_sel = alumux::alumux2_regfile_imm_out;
         end
     end
