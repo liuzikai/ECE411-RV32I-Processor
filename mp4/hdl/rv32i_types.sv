@@ -98,8 +98,15 @@ typedef struct packed {
 
     // WB stage control signals
     logic regfile_wb;
-    rv32i_reg regfile_rd;
+    logic rs1_read;
+    logic rs2_read;
 
 } rv32i_control_word;
+
+typedef struct packed {
+    rv32i_reg rs1;
+    rv32i_reg rs2;
+    rv32i_reg rd;
+} rv32i_reg_pack;
 
 endpackage : rv32i_types
