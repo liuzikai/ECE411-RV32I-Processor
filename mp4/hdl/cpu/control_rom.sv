@@ -6,7 +6,6 @@ module control_rom (
     input rv32i_opcode opcode,
     input logic [2:0] funct3,
     input logic [6:0] funct7,
-    input rv32i_reg rd, 
 
     // Output control word
     output rv32i_control_word ctrl
@@ -35,7 +34,9 @@ function void set_defaults();
 
     // WB stage control signals
     ctrl.regfile_wb = 1'b0;
-    ctrl.regfile_rd = rd;
+    ctrl.rs1_read = 1'b0;
+    ctrl.rs2_read = 1'b0;
+    ctrl.rd_write = 1'b0;
 
 endfunction
 
@@ -71,23 +72,29 @@ always_comb begin
         op_auipc: begin  // add upper immediate PC (U type)
             setALU(alumux::pc_out, alumux::u_imm, alu_add);
             loadRegfile(regfilemux::alu_out);
+            ctrl.rd_write = 1'b1;
         end
         op_lui: begin  // load upper immediate (U type)
             loadRegfile(regfilemux::u_imm);
+            ctrl.rd_write = 1'b1;
         end
         op_jal: begin  // jump and link (J type)
             setALU(alumux::pc_out, alumux::j_imm, alu_add); 
             loadPC(pcmux::alu_out);
             loadRegfile(regfilemux::pc_plus4);
+            ctrl.rd_write = 1'b1;
         end
         op_jalr: begin  // jump and link register (I type)
             setALU(alumux::rs1_out, alumux::i_imm, alu_add); 
             loadPC(pcmux::alu_mod2);
             loadRegfile(regfilemux::pc_plus4);
+            ctrl.rd_write = 1'b1;
         end
         op_br: begin  // branch (B type)
             setALU(alumux::pc_out, alumux::b_imm, alu_add);
             loadPC(pcmux::br);
+            ctrl.rs1_read = 1'b1;
+            ctrl.rs2_read = 1'b1;
         end
         op_load: begin  // load (I type)
             setALU(alumux::rs1_out, alumux::i_imm, alu_add); 
@@ -101,6 +108,8 @@ always_comb begin
                 rv32i_types::lhu: loadRegfile(regfilemux::lhu);
                 default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
+            ctrl.rs1_read = 1'b1;
+            ctrl.rd_write = 1'b1;
         end
         op_store: begin  // store (S type)
             setALU(alumux::rs1_out, alumux::s_imm, alu_add);
@@ -111,6 +120,7 @@ always_comb begin
                 sw : ctrl.d_byte_enable = 4'b1111;
                 default: $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
             endcase
+            ctrl.rs1_read = 1'b1;
         end
         op_imm: begin  // arith ops with register/immediate operands (I type)
             // TODO: these nested muxes may be too long
@@ -137,6 +147,8 @@ always_comb begin
                     loadRegfile(regfilemux::alu_out);
                 end
             endcase
+            ctrl.rs1_read = 1'b1;
+            ctrl.rd_write = 1'b1;
         end
         op_reg: begin  // arith ops with register operands (R type)
             // TODO: these nested muxes may be too long
@@ -172,6 +184,9 @@ always_comb begin
                     loadRegfile(regfilemux::alu_out);
                 end
             endcase
+            ctrl.rs1_read = 1'b1;
+            ctrl.rs2_read = 1'b1;
+            ctrl.rd_write = 1'b1;
         end
         default: ;  // use default control word
     endcase

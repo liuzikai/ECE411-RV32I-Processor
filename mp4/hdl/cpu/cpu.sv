@@ -45,8 +45,18 @@ module cpu (
     
     logic regfile_wb;
     rv32i_reg regfile_rd;
+    logic br_en;
 
-    logic stall;
+    logic ld_pc,
+    logic ld_mdar,
+    logic ld_ir,
+    logic ld_alu_imm,
+    logic ld_mwdr,
+    logic ld_mwdr_imm,
+    logic ld_regfile_imm,
+    logic ld_cmp_imm,
+    logic ld_alu_wb_imm,
+    logic ld_cmp_wb_imm,
 
     // ================================ Modules ================================
 
@@ -57,12 +67,6 @@ module cpu (
     );
 
     datapath datapath(
-        // Not using the following signals for now
-        .opcode(),
-        .funct3(),
-        .funct7(),
-        .rd_out(),
-
         // Unaligned data channel
         .d_addr(raw_d_addr),
         .d_rdata(raw_d_rdata),
