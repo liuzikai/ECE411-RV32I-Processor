@@ -47,16 +47,10 @@ module cpu (
     rv32i_reg regfile_rd;
     logic br_en;
 
-    logic ld_pc;
-    logic ld_mdar;
-    logic ld_ir;
-    logic ld_alu_imm;
-    logic ld_mwdr;
-    logic ld_mwdr_imm;
-    logic ld_regfile_imm;
-    logic ld_cmp_imm;
-    logic ld_alu_wb_imm;
-    logic ld_cmp_wb_imm;
+    logic stall_ID;
+    logic stall_EX;
+    logic stall_MEM;
+    logic stall_WB;
 
     // ================================ Modules ================================
 
