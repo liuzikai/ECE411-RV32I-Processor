@@ -109,7 +109,7 @@ register u_imm2(
 pc_register PC(
     .clk(clk),
     .rst(rst),
-    .load(~stall_EX),
+    .load((~stall_ID) || (~stall_EX && (pcmux_sel == pcmux::alu_out || pcmux_sel == pcmux::alu_mod2 || (pcmux_sel == pcmux::br && br_en)))),
     .in(pcmux_out),
     .out(pc_out)
 );
@@ -249,6 +249,21 @@ always_comb begin : MUXES
         default: `BAD_MUX_SEL;
     endcase
 
+    // regfilemux
+    regfilemux_out = 32'hXXXXXXXX;
+    unique case (regfilemux_sel)
+        regfilemux::alu_out:  regfilemux_out = alu_wb_imm_out;
+        regfilemux::br_en:    regfilemux_out = cmp_wb_imm_out;
+        regfilemux::u_imm:    regfilemux_out = u_imm2_out;
+        regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
+        regfilemux::lw:       regfilemux_out = d_rdata;
+        regfilemux::lb:       regfilemux_out = {{24{d_rdata[7]}}, d_rdata[7:0]};
+        regfilemux::lbu:      regfilemux_out = {24'b0, d_rdata[7:0]};
+        regfilemux::lh:       regfilemux_out = {{16{d_rdata[15]}}, d_rdata[15:0]};
+        regfilemux::lhu:      regfilemux_out = {16'b0, d_rdata[15:0]};
+        default: `BAD_MUX_SEL;
+    endcase
+
     // alumux1
     unique case (alumux1_sel)
         alumux::rs1_out: alumux1_out = rs1_out;
@@ -270,21 +285,6 @@ always_comb begin : MUXES
         alumux::alumux2_alu_out: alumux2_out = alu_out;
         alumux::alumux2_regfilemux_out: alumux2_out = regfilemux_out;
         alumux::alumux2_regfile_imm_out: alumux2_out = regfile_in;
-        default: `BAD_MUX_SEL;
-    endcase
-
-    // regfilemux
-    regfilemux_out = 32'hXXXXXXXX;
-    unique case (regfilemux_sel)
-        regfilemux::alu_out:  regfilemux_out = alu_wb_imm_out;
-        regfilemux::br_en:    regfilemux_out = cmp_wb_imm_out;
-        regfilemux::u_imm:    regfilemux_out = u_imm2_out;
-        regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
-        regfilemux::lw:       regfilemux_out = d_rdata;
-        regfilemux::lb:       regfilemux_out = {{24{d_rdata[7]}}, d_rdata[7:0]};
-        regfilemux::lbu:      regfilemux_out = {24'b0, d_rdata[7:0]};
-        regfilemux::lh:       regfilemux_out = {{16{d_rdata[15]}}, d_rdata[15:0]};
-        regfilemux::lhu:      regfilemux_out = {16'b0, d_rdata[15:0]};
         default: `BAD_MUX_SEL;
     endcase
 

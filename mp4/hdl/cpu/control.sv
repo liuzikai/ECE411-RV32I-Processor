@@ -127,62 +127,54 @@ always_comb begin : MAIN_COMB
     if (ID_EX.opcode == op_br && br_en) begin
         flush_list[1:0] = 2'b11; // Flush the IF_ID and ID_EX control words
     end
-    if (IF_ID.rs1_read) begin
+    if (IF_ID.rs1_read && IF_ID_reg.rs1) begin
         // rs1 should be considered
         if (ID_EX.regfile_wb && ID_EX_reg.rd == IF_ID_reg.rs1) begin
-            if (EX_MEM.opcode == op_load) begin
+            if (ID_EX.opcode == op_load) begin
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
-            end if (ID_EX.use_cmp == 1'b1) begin
+            end else if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux1_sel = cmpmux::cmpmux1_alu_out;
-            end
-            else begin
+            end else begin
                 alumux1_sel = alumux::alumux1_alu_out;
             end
         end
         else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs1) begin
-            if (ID_EX.use_cmp == 1'b1) begin
+            if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux1_sel = cmpmux::cmpmux1_regfilemux_out;
-            end
-            else begin
+            end else begin
                 alumux1_sel = alumux::alumux1_regfilemux_out;
             end
         end
         else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs1) begin
-            if (ID_EX.use_cmp == 1'b1) begin
+            if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux1_sel = cmpmux::cmpmux1_regfile_imm_out;
-            end
-            else begin
+            end else begin
                 alumux1_sel = alumux::alumux1_regfile_imm_out;
             end
         end
     end
-    if (IF_ID.rs2_read) begin
+    if (IF_ID.rs2_read && IF_ID_reg.rs2) begin
         // rs2 should be considered
         if (ID_EX.regfile_wb && ID_EX_reg.rd == IF_ID_reg.rs2) begin
-            if (EX_MEM.opcode == op_load) begin
+            if (ID_EX.opcode == op_load) begin
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
-            end if (ID_EX.use_cmp == 1'b1) begin
+            end else if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_alu_out;
-            end
-            else begin
+            end else begin
                 alumux2_sel = alumux::alumux2_alu_out;
             end
-        end
-        else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
-            if (ID_EX.use_cmp == 1'b1) begin
+        end else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
+            if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_regfilemux_out;
-            end
-            else begin
+            end else begin
                 alumux2_sel = alumux::alumux2_regfilemux_out;
             end
-        end
-        else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs2) begin
-            if (ID_EX.use_cmp == 1'b1) begin
+        end else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs2) begin
+            if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_regfile_imm_out;
-            end
-            else begin
+            end else begin
                 alumux2_sel = alumux::alumux2_regfile_imm_out;
             end
         end
