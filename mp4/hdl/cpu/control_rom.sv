@@ -125,6 +125,7 @@ always_comb begin
                 default: $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
             endcase
             ctrl.rs1_read = 1'b1;
+            ctrl.rs2_read = 1'b1;
         end
         op_imm: begin  // arith ops with register/immediate operands (I type)
             // TODO: these nested muxes may be too long

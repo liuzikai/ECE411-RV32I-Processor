@@ -182,7 +182,7 @@ always_comb begin : MAIN_COMB
             if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_regfile_imm_out;
             end else if (IF_ID.opcode == op_store) begin
-                mwdrmux_sel = mwdrmux::mwdrmux_regfile_out;
+                mwdrmux_sel = mwdrmux::mwdrmux_regfile_imm_out;
             end else begin
                 alumux2_sel = alumux::alumux2_regfile_imm_out;
             end

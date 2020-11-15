@@ -310,9 +310,9 @@ always_comb begin : MUXES
     // mwdrmux
     unique case (mwdrmux_sel)
         mwdrmux::rs2_out:                    mwdrmux_out = rs2_out;
-        mwdrmux::mwdrmux1_alu_out:           mwdrmux_out = alu_out;
-        mwdrmux::mwdrmux1_regfilemux_out:    mwdrmux_out = regfilemux_out;
-        mwdrmux::mwdrmux1_regfile_imm_out:   mwdrmux_out = regfile_in;
+        mwdrmux::mwdrmux_alu_out:           mwdrmux_out = alu_out;
+        mwdrmux::mwdrmux_regfilemux_out:    mwdrmux_out = regfilemux_out;
+        mwdrmux::mwdrmux_regfile_imm_out:   mwdrmux_out = regfile_in;
         default: `BAD_MUX_SEL;
     endcase
 end
