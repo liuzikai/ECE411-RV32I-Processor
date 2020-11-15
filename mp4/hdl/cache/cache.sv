@@ -14,7 +14,7 @@ module cache #(
     input rst,
 
     // cpu -> bus_adapter & cache_control & cache_datapath
-    input  logic [31:0] mem_address,
+    input  logic [31:0] mem_addr,
 
     // cpu <-> bus_adapter
     input  logic [31:0] mem_wdata,
@@ -29,7 +29,7 @@ module cache #(
     // cache_datapath <-> cacheline_adapter
     output logic [255:0] ca_wdata,    // line_i
     input  logic [255:0] ca_rdata,    // line_o
-    output logic [31:0]  ca_address,  // address_i
+    output logic [31:0]  ca_addr,     // address_i
 
     // cache_control <-> cacheline_adapter
     input  logic ca_resp,          // resp_o
@@ -74,7 +74,7 @@ cache_datapath datapath (
 );
 
 bus_adapter bus_adapter (
-    .address(mem_address),
+    .address(mem_addr),
     .*
 );
 

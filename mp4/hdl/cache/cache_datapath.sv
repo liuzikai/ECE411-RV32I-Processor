@@ -13,7 +13,7 @@ module cache_datapath #(
     input rst,
 
     // cpu <-> cache_datapath
-    input  logic [31:0] mem_address,
+    input  logic [31:0] mem_addr,
 
     // bus_adapter <-> cache_datapath
     input  logic [255:0] mem_wdata256,
@@ -23,7 +23,7 @@ module cache_datapath #(
     // cache_datapath <-> cacheline_adapter
     output logic [255:0] ca_wdata,
     input  logic [255:0] ca_rdata,
-    output logic [31:0]  ca_address,
+    output logic [31:0]  ca_addr,
 
     // datapath -> control
     output logic hit,
@@ -51,13 +51,13 @@ module cache_datapath #(
 
 // ================================ Common ================================
 
-// Get set index from mem_address
+// Get set index from mem_addr
 logic [s_index-1:0] set_index;
-assign set_index = mem_address[s_index+s_offset-1:s_offset];
+assign set_index = mem_addr[s_index+s_offset-1:s_offset];
 
-// Get tag from mem_address
+// Get tag from mem_addr
 logic [s_tag-1:0] tag;
-assign tag = mem_address[31 -: s_tag];
+assign tag = mem_addr[31 -: s_tag];
 
 // ================================ Arrays ================================
 
@@ -173,12 +173,12 @@ always_comb begin : muxes
     ca_wdata = data_out[lru_way];
 
     // Address output to cacheline adapter
-    // Align mem_address to 32 bytes and pass to cacheline adapter
+    // Align mem_addr to 32 bytes and pass to cacheline adapter
     unique case (addrmux_sel)
-        addrmux::mem_addr: ca_address = {mem_address[31:s_offset], 5'b00000};
-        addrmux::tag0_addr: ca_address = {tag_out[0], set_index, 5'b00000};
-        addrmux::tag1_addr: ca_address = {tag_out[1], set_index, 5'b00000};
-        default: ca_address = {32{1'bX}};
+        addrmux::mem_addr: ca_addr = {mem_addr[31:s_offset], 5'b00000};
+        addrmux::tag0_addr: ca_addr = {tag_out[0], set_index, 5'b00000};
+        addrmux::tag1_addr: ca_addr = {tag_out[1], set_index, 5'b00000};
+        default: ca_addr = {32{1'bX}};
     endcase
 
 end : muxes

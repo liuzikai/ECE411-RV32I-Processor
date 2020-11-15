@@ -13,7 +13,7 @@ module cache_control #(
     input rst,
 
     // cpu <-> cache_control
-    input  logic [31:0] mem_address,
+    input  logic [31:0] mem_addr,
     input  logic mem_read,
     input  logic mem_write,
     output logic mem_resp,

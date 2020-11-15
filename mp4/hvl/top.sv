@@ -29,58 +29,49 @@ assign rvfi.halt = 0;   // Set high when you detect an infinite loop
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 
-/*
-The following signals need to be set:
-Instruction and trap:
-    rvfi.inst
-    rvfi.trap
+// Instruction and trap
+assign rvfi.inst = dut.cpu.rvfi_insn;
+assign rvfi.trap = 1'b0;
 
-Regfile:
-    rvfi.rs1_addr
-    rvfi.rs2_add
-    rvfi.rs1_rdata
-    rvfi.rs2_rdata
-    rvfi.load_regfile
-    rvfi.rd_addr
-    rvfi.rd_wdata
+// Regfile
+assign rvfi.rs1_addr = dut.cpu.rvfi_rs1_addr;
+assign rvfi.rs2_addr = dut.cpu.rvfi_rs2_addr;
+assign rvfi.rs1_rdata = dut.cpu.rvfi_rs1_rdata;
+assign rvfi.rs2_rdata = dut.cpu.rvfi_rs2_rdata;
+assign rvfi.load_regfile = dut.cpu.regfile_wb;
+assign rvfi.rd_addr = dut.cpu.rvfi_rd_addr;
+assign rvfi.rd_wdata = dut.cpu.rvfi_rd_wdata;
 
-PC:
-    rvfi.pc_rdata
-    rvfi.pc_wdata
+// PC
+assign rvfi.pc_rdata = dut.cpu.rvfi_pc_rdata;
+assign rvfi.pc_wdata = dut.cpu.rvfi_pc_wdata;
 
-Memory:
-    rvfi.mem_addr
-    rvfi.mem_rmask
-    rvfi.mem_wmask
-    rvfi.mem_rdata
-    rvfi.mem_wdata
-
-Please refer to rvfi_itf.sv for more information.
-*/
+// Memory
+assign rvfi.mem_addr = dut.cpu.rvfi_d_addr;
+assign rvfi.mem_rmask = dut.cpu.rvfi_d_rmask;
+assign rvfi.mem_wmask = dut.cpu.rvfi_d_wmask;
+assign rvfi.mem_rdata = dut.cpu.rvfi_d_rdata;
+assign rvfi.mem_wdata = dut.cpu.rvfi_d_wdata;
 
 /**************************** End RVFIMON signals ****************************/
 
 /********************* Assign Shadow Memory Signals Here *********************/
-// This section not required until CP2
-/*
-The following signals need to be set:
-icache signals:
-    itf.inst_read
-    itf.inst_addr
-    itf.inst_resp
-    itf.inst_rdata
 
-dcache signals:
-    itf.data_read
-    itf.data_write
-    itf.data_mbe
-    itf.data_addr
-    itf.data_wdata
-    itf.data_resp
-    itf.data_rdata
+// icache signals
+assign itf.inst_read = dut.i_read;
+assign itf.inst_addr = dut.i_addr
+assign itf.inst_resp = dut.i_resp;
+assign itf.inst_rdata = dut.i_rdata;
 
-Please refer to tb_itf.sv for more information.
-*/
+// dcache signals
+assign itf.data_read= dut.d_read;
+assign itf.data_write= dut.d_write;
+assign itf.data_mbe= dut.d_byte_enable;
+assign itf.data_addr = dut.d_addr;
+assign itf.data_wdata= dut.d_wdata;
+assign itf.data_resp= dut.d_resp;
+assign itf.data_rdata= dut.d_rdata;
+
 
 /*********************** End Shadow Memory Assignments ***********************/
 
@@ -109,18 +100,12 @@ mp4 dut(
     .clk(itf.clk),
     .rst(itf.rst),
 
-    .i_addr(itf.inst_addr),
-    .i_rdata(itf.inst_rdata),
-    .i_read(itf.inst_read),
-    .i_resp(itf.inst_resp),
-
-    .d_addr(itf.data_addr),
-    .d_rdata(itf.data_rdata),
-    .d_wdata(itf.data_wdata),
-    .d_byte_enable(itf.data_mbe),
-    .d_read(itf.data_read),
-    .d_write(itf.data_write),
-    .d_resp(itf.data_resp)
+    .mem_addr(itf.mem_addr),
+    .mem_rdata(itf.mem_rdata),
+    .mem_wdata(itf.mem_wdata),
+    .mem_read(itf.mem_read),
+    .mem_write(itf.mem_write),
+    .mem_resp(itf.mem_resp)
 );
 /***************************** End Instantiation *****************************/
 
