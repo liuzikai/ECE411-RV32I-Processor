@@ -6,7 +6,7 @@ DEFAULT_TARGET=$SCRIPTDIR/../simulation/modelsim/memory.lst
 ASSEMBLER=/opt/riscv32/bin/riscv32-unknown-elf-gcc
 OBJCOPY=/opt/riscv32/bin/riscv32-unknown-elf-objcopy
 OBJDUMP=/opt/riscv32/bin/riscv32-unknown-elf-objdump
-ADDRESSABILITY=1
+ADDRESSABILITY=32
 
 # Command line parameters
 ASM_FILE=$1

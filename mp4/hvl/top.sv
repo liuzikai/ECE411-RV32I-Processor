@@ -24,34 +24,34 @@ bit f;
 /************************ Signals necessary for monitor **********************/
 // This section not required until CP2
 
-assign rvfi.commit = 0; // Set high when a valid instruction is modifying regfile or PC
+assign rvfi.commit = (dut.cpu.control.MEM_WB.opcode != op_none) && ~dut.cpu.stall_WB; // Set high when a valid instruction is modifying regfile or PC
 assign rvfi.halt = 0;   // Set high when you detect an infinite loop
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 
 // Instruction and trap
-assign rvfi.inst = dut.cpu.rvfi_insn;
+assign rvfi.inst = dut.cpu.datapath.rvfi_insn;
 assign rvfi.trap = 1'b0;
 
 // Regfile
-assign rvfi.rs1_addr = dut.cpu.rvfi_rs1_addr;
-assign rvfi.rs2_addr = dut.cpu.rvfi_rs2_addr;
-assign rvfi.rs1_rdata = dut.cpu.rvfi_rs1_rdata;
-assign rvfi.rs2_rdata = dut.cpu.rvfi_rs2_rdata;
-assign rvfi.load_regfile = dut.cpu.regfile_wb;
-assign rvfi.rd_addr = dut.cpu.rvfi_rd_addr;
-assign rvfi.rd_wdata = dut.cpu.rvfi_rd_wdata;
+assign rvfi.rs1_addr = dut.cpu.control.MEM_WB_reg.rs1;
+assign rvfi.rs2_addr = dut.cpu.control.MEM_WB_reg.rs2;
+assign rvfi.rs1_rdata = dut.cpu.datapath.rvfi_rs1_rdata;
+assign rvfi.rs2_rdata = dut.cpu.datapath.rvfi_rs2_rdata;
+assign rvfi.load_regfile = dut.cpu.datapath.regfile_wb;
+assign rvfi.rd_addr = dut.cpu.datapath.rvfi_rd_addr;
+assign rvfi.rd_wdata = dut.cpu.datapath.rvfi_rd_wdata;
 
 // PC
-assign rvfi.pc_rdata = dut.cpu.rvfi_pc_rdata;
-assign rvfi.pc_wdata = dut.cpu.rvfi_pc_wdata;
+assign rvfi.pc_rdata = dut.cpu.datapath.rvfi_pc_rdata;
+assign rvfi.pc_wdata = dut.cpu.datapath.rvfi_pc_wdata;
 
 // Memory
-assign rvfi.mem_addr = dut.cpu.rvfi_d_addr;
-assign rvfi.mem_rmask = dut.cpu.rvfi_d_rmask;
-assign rvfi.mem_wmask = dut.cpu.rvfi_d_wmask;
-assign rvfi.mem_rdata = dut.cpu.rvfi_d_rdata;
-assign rvfi.mem_wdata = dut.cpu.rvfi_d_wdata;
+assign rvfi.mem_addr = dut.cpu.datapath.rvfi_d_addr;
+assign rvfi.mem_rmask = dut.cpu.datapath.rvfi_d_rmask;
+assign rvfi.mem_wmask = dut.cpu.datapath.rvfi_d_wmask;
+assign rvfi.mem_rdata = dut.cpu.datapath.rvfi_d_rdata;
+assign rvfi.mem_wdata = dut.cpu.datapath.rvfi_d_wdata;
 
 /**************************** End RVFIMON signals ****************************/
 

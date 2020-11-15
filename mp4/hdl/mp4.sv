@@ -4,12 +4,12 @@ module mp4(
     input clk,
     input rst,
 
-    output rv32i_word  mem_addr,
-    input  rv32i_word  mem_rdata,
-    output rv32i_word  mem_wdata,
-    output logic       mem_read,
-    output logic       mem_write,
-    input  logic       mem_resp
+    output rv32i_word       mem_addr,
+    input  logic [63:0]     mem_rdata,
+    output logic [63:0]     mem_wdata,
+    output logic            mem_read,
+    output logic            mem_write,
+    input  logic            mem_resp
 );
 
 // CPU <-> I-Cache
@@ -59,7 +59,7 @@ cache i_cache(
     .mem_addr(i_addr),
     .mem_wdata(32'bX),
     .mem_rdata(i_rdata),
-    .mem_byte_enable(4'b1111);
+    .mem_byte_enable(4'b1111),
     .mem_read(i_read),
     .mem_write(1'b0),
     .mem_resp(i_resp),
@@ -77,7 +77,7 @@ cache d_cache(
     .mem_addr(d_addr),
     .mem_wdata(d_wdata),
     .mem_rdata(d_rdata),
-    .mem_byte_enable(d_byte_enable);
+    .mem_byte_enable(d_byte_enable),
     .mem_read(d_read),
     .mem_write(d_write),
     .mem_resp(d_resp),
@@ -97,11 +97,11 @@ arbiter arbiter(
     .d_read(d_a_read),
     .d_write(d_a_write),
     .d_addr(d_a_addr),
-    .d_wdata(d_a_wdata)
+    .d_wdata(d_a_wdata),
     .d_rdata(d_a_rdata),
     .d_resp(d_a_resp),
     .*
-)
+);
 
 cacheline_adaptor cacheline_adaptor (
     .clk(clk),
@@ -116,7 +116,7 @@ cacheline_adaptor cacheline_adaptor (
 
     .burst_i(mem_rdata),
     .burst_o(mem_wdata),
-    .address_o(mem_address),
+    .address_o(mem_addr),
     .read_o(mem_read),
     .write_o(mem_write),
     .resp_i(mem_resp)

@@ -7,16 +7,14 @@ module datapath(
     input rst,
 
     // Signals to intermediate registers
-    input logic ld_pc,
-    input logic ld_mdar,
-    input logic ld_ir,
-    input logic ld_alu_imm,
-    input logic ld_mwdr,
-    input logic ld_mwdr_imm,
-    input logic ld_regfile_imm,
-    input logic ld_cmp_imm,
-    input logic ld_alu_wb_imm,
-    input logic ld_cmp_wb_imm,
+    input logic stall_ID,
+    input logic stall_EX,
+    input logic stall_MEM,
+    input logic stall_WB,
+
+    input logic [3:0] d_byte_enable,
+    input logic d_read,
+    input logic d_write,
 
     // Signals from control words to MUXes
     input alumux::alumux1_sel_t alumux1_sel,
@@ -65,7 +63,7 @@ rv32i_word pc_out, pc_imm1_out;
 
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out, mwdr_imm_out;
-rv32i_word u_imm1_out, u_imm2_out;
+rv32i_word u_imm1_out, u_imm2_out, cmp_wb_imm_out;
 rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out, pcmux_out;
 
 assign i_addr = pc_out;
@@ -76,7 +74,7 @@ assign i_addr = pc_out;
 ir IR(
     .clk(clk),
     .rst(rst),
-    .load(ld_ir),
+    .load(~stall_ID),
     .in(i_rdata),
     .funct3(funct3),
     .funct7(funct7),
@@ -94,7 +92,7 @@ ir IR(
 register u_imm1(
     .clk(clk),
     .rst(rst),
-    .load(ld_ir),
+    .load(~stall_EX),
     .in(u_imm),
     .out(u_imm1_out)
 );
@@ -102,7 +100,7 @@ register u_imm1(
 register u_imm2(
     .clk(clk),
     .rst(rst),
-    .load(ld_ir),
+    .load(~stall_MEM),
     .in(u_imm1_out),
     .out(u_imm2_out)
 );
@@ -110,7 +108,7 @@ register u_imm2(
 pc_register PC(
     .clk(clk),
     .rst(rst),
-    .load(ld_pc),
+    .load(~stall_EX),
     .in(pcmux_out),
     .out(pc_out)
 );
@@ -118,7 +116,7 @@ pc_register PC(
 register pc_imm1(
     .clk(clk),
     .rst(rst),
-    .load(ld_pc),
+    .load(~stall_ID),
     .in(pc_out),
     .out(pc_imm1_out)
 );
@@ -126,7 +124,7 @@ register pc_imm1(
 register MDAR(
     .clk(clk),
     .rst(rst),
-    .load(ld_mdar),
+    .load(~stall_MEM),
     .in(alu_out),
     .out(d_addr)
 );
@@ -134,7 +132,7 @@ register MDAR(
 register MWDR(
     .clk(clk),
     .rst(rst),
-    .load(ld_mwdr),
+    .load(~stall_MEM),
     .in(mwdr_imm_out),
     .out(d_wdata)
 );
@@ -142,7 +140,7 @@ register MWDR(
 register mwdr_imm(
     .clk(clk),
     .rst(rst),
-    .load(ld_mwdr_imm),
+    .load(~stall_EX),
     .in(rs2_out),
     .out(mwdr_imm_out)
 );
@@ -150,7 +148,7 @@ register mwdr_imm(
 register regfile_imm(
     .clk(clk),
     .rst(rst),
-    .load(ld_regfile_imm),
+    .load(~stall_MEM),
     .in(regfilemux_out),
     .out(regfile_in)
 );
@@ -158,7 +156,7 @@ register regfile_imm(
 register alu_imm1(
     .clk(clk),
     .rst(rst),
-    .load(ld_alu_imm),
+    .load(~stall_EX),
     .in(alumux1_out),
     .out(alu_in1)
 );
@@ -166,7 +164,7 @@ register alu_imm1(
 register alu_imm2(
     .clk(clk),
     .rst(rst),
-    .load(ld_alu_imm),
+    .load(~stall_EX),
     .in(alumux2_out),
     .out(alu_in2)
 );
@@ -174,7 +172,7 @@ register alu_imm2(
 register alu_wb_imm(
     .clk(clk),
     .rst(rst),
-    .load(ld_alu_wb_imm),
+    .load(~stall_MEM),
     .in(alu_out),
     .out(alu_wb_imm_out)
 );
@@ -182,7 +180,7 @@ register alu_wb_imm(
 register cmp_imm1(
     .clk(clk),
     .rst(rst),
-    .load(ld_cmp_imm),
+    .load(~stall_EX),
     .in(cmpmux_out),
     .out(cmp_in1)
 );
@@ -190,7 +188,7 @@ register cmp_imm1(
 register cmp_imm2(
     .clk(clk),
     .rst(rst),
-    .load(ld_cmp_imm),
+    .load(~stall_EX),
     .in(rs1_out),
     .out(cmp_in2)
 );
@@ -198,7 +196,7 @@ register cmp_imm2(
 register cmp_wb_imm(
     .clk(clk),
     .rst(rst),
-    .load(ld_cmp_wb_imm),
+    .load(~stall_MEM),
     .in({31'b0, br_en}),
     .out(cmp_wb_imm_out)
 );
@@ -208,7 +206,7 @@ register cmp_wb_imm(
 regfile regfile(
     .clk(clk),
     .rst(rst),
-    .load(regfile_wb),
+    .load(regfile_wb && (~stall_WB)),
     .in(regfile_in),
     .src_a(rs1),        // directly from IR
     .src_b(rs2),        // directly from IR
@@ -297,5 +295,210 @@ always_comb begin : MUXES
     endcase
 
 end
+
+
+// ================================ Signals and Intermediate Registers for RVFI ================================
+
+// rvfi_pc_rdata
+rv32i_word pc_imm2_out, pc_imm3_out, rvfi_pc_rdata;
+register pc_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(pc_imm1_out),
+    .out(pc_imm2_out)
+);
+register pc_imm3(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_MEM),
+    .in(pc_imm2_out),
+    .out(pc_imm3_out)
+);
+register pc_imm4(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(pc_imm3_out),
+    .out(rvfi_pc_rdata)
+);
+
+// rvfi_pc_wdata
+rv32i_word pc_wdata_imm1_out, pc_wdata_imm2_out, pc_wdata_imm3_in, pc_wdata_imm3_out, rvfi_pc_wdata;
+register pc_wdata_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_ID),
+    .in(pc_out + 4),
+    .out(pc_wdata_imm1_out)
+);
+register pc_wdata_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(pc_wdata_imm1_out),
+    .out(pc_wdata_imm2_out)
+);
+
+always_comb begin
+    unique case (pcmux_sel)
+        pcmux::pc_plus4: pc_wdata_imm3_in = pc_wdata_imm2_out;
+        pcmux::br:       pc_wdata_imm3_in = (br_en ? pcmux_out : pc_wdata_imm2_out);
+        default:         pc_wdata_imm3_in = pcmux_out;
+    endcase
+end
+
+register pc_wdata_imm3(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(pc_wdata_imm3_in),
+    .out(pc_wdata_imm3_out)
+);
+register pc_wdata_imm4(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(pc_wdata_imm3_out),
+    .out(rvfi_pc_wdata)
+);
+
+// rvfi_d_addr
+rv32i_word rvfi_d_addr;
+register d_addr_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(d_addr),  // use aligned value
+    .out(rvfi_d_addr)
+);
+
+// rvfi_d_rdata
+rv32i_word rvfi_d_rdata;
+register d_rdata_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(d_rdata),  // use aligned value
+    .out(rvfi_d_rdata)
+);
+
+// rvfi_d_wdata
+rv32i_word rvfi_d_wdata;
+register d_wdata_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(d_wdata),  // use aligned value
+    .out(rvfi_d_wdata)
+);
+
+// rvfi_d_rmask
+logic [3:0] rvfi_d_rmask;
+register d_rmask_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(d_read ? d_byte_enable : 4'b0),  // use aligned value
+    .out(rvfi_d_rmask)
+);
+
+// rvfi_d_wmask
+logic [3:0] rvfi_d_wmask;
+register d_wmask_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(d_write ? d_byte_enable : 4'b0),  // use aligned value
+    .out(rvfi_d_wmask)
+);
+
+// rvfi_rd_addr
+rv32i_reg rvfi_rd_addr;
+assign rvfi_rd_addr = (regfile_wb ? regfile_rd : 5'b0);
+
+// rvfi_rd_wdata
+rv32i_word rvfi_rd_wdata;
+assign rvfi_rd_wdata = regfile_in;
+
+// rvfi_rs1_rdata
+rv32i_word rs1_rdata_imm1_out, rs1_rdata_imm2_out, rvfi_rs1_rdata;
+register rs1_rdata_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(rs1_out),
+    .out(rs1_rdata_imm1_out)
+);
+register rs1_rdata_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_MEM),
+    .in(rs1_rdata_imm1_out),
+    .out(rs1_rdata_imm2_out)
+);
+register rs1_rdata_imm3(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(rs1_rdata_imm2_out),
+    .out(rvfi_rs1_rdata)
+);
+
+// rvfi_rs2_rdata
+rv32i_word rs2_rdata_imm1_out, rs2_rdata_imm2_out, rvfi_rs2_rdata;
+register rs2_rdata_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(rs2_out),
+    .out(rs2_rdata_imm1_out)
+);
+register rs2_rdata_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_MEM),
+    .in(rs2_rdata_imm1_out),
+    .out(rs2_rdata_imm2_out)
+);
+register rs2_rdata_imm3(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(rs2_rdata_imm2_out),
+    .out(rvfi_rs2_rdata)
+);
+
+// rvfi_insn
+rv32i_word insn_imm1_out, insn_imm2_out, insn_imm3_out, rvfi_insn;
+register insn_imm1(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_ID),
+    .in(i_rdata),
+    .out(insn_imm1_out)
+);
+register insn_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(insn_imm1_out),
+    .out(insn_imm2_out)
+);
+register insn_imm3(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_MEM),
+    .in(insn_imm2_out),
+    .out(insn_imm3_out)
+);
+register insn_imm4(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(insn_imm3_out),
+    .out(rvfi_insn)
+);
+
 
 endmodule : datapath

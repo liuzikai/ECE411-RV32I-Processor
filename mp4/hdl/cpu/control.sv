@@ -56,6 +56,7 @@ assign stall_ID = stall_all || stall_decode;
 assign stall_EX = stall_all;
 assign stall_MEM = stall_all;
 assign stall_WB = stall_all;
+assign stall_all = (!i_resp) || (!d_ready_next);
 
 function void set_defaults();
     // IF-ID
@@ -79,7 +80,6 @@ function void set_defaults();
     regfile_rd = MEM_WB_reg.rd;
 
     // Internal Register
-    stall_all = (!i_resp) || (!d_ready_next);
     stall_decode = 1'b0;
     flush_list = 4'b0000;
 endfunction
@@ -98,7 +98,7 @@ always_comb begin : NEW_REG_PACK_ASSIGN
 end
 
 always_comb begin : FLUSH_ASSIGN
-    FLUSH.opcode = rv32i_opcode::op_none;
+    FLUSH.opcode = op_none;
     FLUSH.alumux1_sel = alumux::alumux1_sel_t'(1'b0);
     FLUSH.alumux2_sel = alumux::alumux2_sel_t'(3'b000);
     FLUSH.regfilemux_sel = regfilemux::regfilemux_sel_t'(4'b0000);
@@ -120,13 +120,13 @@ end
 
 always_comb begin : MAIN_COMB
     set_defaults();
-    if (ID_EX.opcode == rv32i_opcode::op_br && br_en) begin
+    if (ID_EX.opcode == op_br && br_en) begin
         flush_list[1:0] = 2'b11; // Flush the IF_ID and ID_EX control words
     end
     if (IF_ID.rs1_read) begin
         // rs1 should be considered
         if (ID_EX.regfile_wb && ID_EX_reg.rd == IF_ID_reg.rs1) begin
-            if (EX_MEM.opcode == rv32i_opcode::op_load) begin
+            if (EX_MEM.opcode == op_load) begin
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
             end
@@ -144,7 +144,7 @@ always_comb begin : MAIN_COMB
     if (IF_ID.rs2_read) begin
         // rs2 should be considered
         if (ID_EX.regfile_wb && ID_EX_reg.rd == IF_ID_reg.rs2) begin
-            if (EX_MEM.opcode == rv32i_opcode::op_load) begin
+            if (EX_MEM.opcode == op_load) begin
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
             end
