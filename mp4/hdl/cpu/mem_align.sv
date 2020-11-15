@@ -44,6 +44,11 @@ always_comb begin
         mem_byte_enable = {raw_byte_enable[0], 3'b0};
         raw_rdata = {24'b0, mem_rdata[31:24]};
     end
+    default: begin
+        mem_wdata = raw_wdata;
+        mem_byte_enable = raw_byte_enable;
+        raw_rdata = mem_rdata;
+    end
 endcase
 end
 

@@ -178,7 +178,7 @@ always_comb begin : muxes
         addrmux::mem_addr: ca_addr = {mem_addr[31:s_offset], 5'b00000};
         addrmux::tag0_addr: ca_addr = {tag_out[0], set_index, 5'b00000};
         addrmux::tag1_addr: ca_addr = {tag_out[1], set_index, 5'b00000};
-        default: ca_addr = {32{1'bX}};
+        default: ca_addr = {32'b0};
     endcase
 
 end : muxes
