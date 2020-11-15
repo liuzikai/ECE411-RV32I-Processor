@@ -20,7 +20,8 @@ module datapath(
     input alumux::alumux1_sel_t alumux1_sel,
     input alumux::alumux2_sel_t alumux2_sel,
     input regfilemux::regfilemux_sel_t regfilemux_sel,
-    input cmpmux::cmpmux_sel_t cmpmux_sel,
+    input cmpmux::cmpmux1_sel_t cmpmux1_sel,
+    input cmpmux::cmpmux2_sel_t cmpmux2_sel,
     input pcmux::pcmux_sel_t pcmux_sel,
 
     // Signals to ALU, CMP and regfile
@@ -63,8 +64,8 @@ rv32i_word pc_out, pc_imm1_out;
 
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out, mwdr_imm_out;
-rv32i_word u_imm1_out, u_imm2_out, cmp_wb_imm_out;
-rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, cmpmux_out, pcmux_out;
+rv32i_word u_imm1_out, u_imm2_out, cmp_wb_imm_out, cmpmux1_out, cmpmux2_out;
+rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, pcmux_out;
 
 assign i_addr = pc_out;
 
@@ -181,7 +182,7 @@ register cmp_imm1(
     .clk(clk),
     .rst(rst),
     .load(~stall_EX),
-    .in(cmpmux_out),
+    .in(cmpmux1_out),
     .out(cmp_in1)
 );
 
@@ -189,7 +190,7 @@ register cmp_imm2(
     .clk(clk),
     .rst(rst),
     .load(~stall_EX),
-    .in(rs1_out),
+    .in(cmpmux2_out),
     .out(cmp_in2)
 );
 
@@ -224,8 +225,8 @@ alu alu(
 
 cmp cmp(
     .cmpop(cmpop),
-    .a(cmp_in2),  // rs1_out
-    .b(cmp_in1),  // cmpmux_out
+    .a(cmp_in1),  // cmpmux1_out
+    .b(cmp_in2),  // cmpmux2_out
     .f(br_en)
 );
 
@@ -252,7 +253,7 @@ always_comb begin : MUXES
     unique case (alumux1_sel)
         alumux::rs1_out: alumux1_out = rs1_out;
         alumux::pc_out:  alumux1_out = pc_imm1_out;  // need to get data from PC chain
-        alumux::alumux1_alumux_out: alumux1_out = alu_out;
+        alumux::alumux1_alu_out: alumux1_out = alu_out;
         alumux::alumux1_regfilemux_out: alumux1_out = regfilemux_out;
         alumux::alumux1_regfile_imm_out: alumux1_out = regfile_in;
         default: `BAD_MUX_SEL;
@@ -266,7 +267,7 @@ always_comb begin : MUXES
         alumux::s_imm:   alumux2_out = s_imm;
         alumux::j_imm:   alumux2_out = j_imm;
         alumux::rs2_out: alumux2_out = rs2_out;
-        alumux::alumux2_alumux_out: alumux2_out = alu_out;
+        alumux::alumux2_alu_out: alumux2_out = alu_out;
         alumux::alumux2_regfilemux_out: alumux2_out = regfilemux_out;
         alumux::alumux2_regfile_imm_out: alumux2_out = regfile_in;
         default: `BAD_MUX_SEL;
@@ -288,9 +289,20 @@ always_comb begin : MUXES
     endcase
 
     // cmpmux
-    unique case (cmpmux_sel)
-        cmpmux::rs2_out: cmpmux_out = rs2_out;
-        cmpmux::i_imm:   cmpmux_out = i_imm;
+    unique case (cmpmux1_sel)
+        cmpmux::rs1_out:                    cmpmux1_out = rs1_out;
+        cmpmux::cmpmux1_alu_out:            cmpmux1_out = alu_out;
+        cmpmux::cmpmux1_regfilemux_out:     cmpmux1_out = regfilemux_out;
+        cmpmux::cmpmux1_regfile_imm_out:    cmpmux1_out = regfile_in;
+        default: `BAD_MUX_SEL;
+    endcase
+
+    unique case (cmpmux2_sel)
+        cmpmux::rs2_out:                    cmpmux2_out = rs2_out;
+        cmpmux::i_imm:                      cmpmux2_out = i_imm;
+        cmpmux::cmpmux2_alu_out:            cmpmux2_out = alu_out;
+        cmpmux::cmpmux2_regfilemux_out:     cmpmux2_out = regfilemux_out;
+        cmpmux::cmpmux2_regfile_imm_out:    cmpmux2_out = regfile_in;
         default: `BAD_MUX_SEL;
     endcase
 

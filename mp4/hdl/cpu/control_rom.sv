@@ -20,7 +20,9 @@ function void set_defaults();
     ctrl.alumux1_sel = alumux::rs1_out;
     ctrl.alumux2_sel = alumux::i_imm;
     ctrl.regfilemux_sel = regfilemux::alu_out;
-    ctrl.cmpmux_sel = cmpmux::rs2_out;
+    ctrl.cmpmux1_sel = cmpmux::rs1_out;
+    ctrl.cmpmux2_sel = cmpmux::rs2_out;
+    ctrl.use_cmp = 1'b0;
     ctrl.aluop = alu_ops'(funct3);
     ctrl.cmpop = branch_funct3_t'(funct3);
 
@@ -47,8 +49,8 @@ function void setALU(alumux::alumux1_sel_t sel1,
     ctrl.aluop = op;
 endfunction
 
-function automatic void setCMP(cmpmux::cmpmux_sel_t sel, branch_funct3_t op);
-    ctrl.cmpmux_sel = sel;
+function automatic void setCMP(cmpmux::cmpmux2_sel_t sel, branch_funct3_t op);
+    ctrl.cmpmux2_sel = sel;
     ctrl.cmpop = op;
 endfunction
 
@@ -90,6 +92,7 @@ always_comb begin
             loadPC(pcmux::br);
             ctrl.rs1_read = 1'b1;
             ctrl.rs2_read = 1'b1;
+            ctrl.use_cmp = 1'b1;
         end
         op_load: begin  // load (I type)
             setALU(alumux::rs1_out, alumux::i_imm, alu_add); 
@@ -128,10 +131,12 @@ always_comb begin
                 slt: begin
                     setCMP(cmpmux::i_imm, blt);
                     loadRegfile(regfilemux::br_en);
+                    ctrl.use_cmp = 1'b1;
                 end
                 sltu: begin
                     setCMP(cmpmux::i_imm, bltu);
                     loadRegfile(regfilemux::br_en);
+                    ctrl.use_cmp = 1'b1;
                 end
                 sr: begin
                     if (funct7 == 7'b0100000) begin  // if this is SRA
@@ -173,10 +178,12 @@ always_comb begin
                 slt: begin
                     setCMP(cmpmux::rs2_out, blt);
                     loadRegfile(regfilemux::br_en);
+                    ctrl.use_cmp = 1'b1;
                 end
                 sltu: begin
                     setCMP(cmpmux::rs2_out, bltu);
                     loadRegfile(regfilemux::br_en);
+                    ctrl.use_cmp = 1'b1;
                 end
                 default: begin
                     setALU(alumux::rs1_out, alumux::rs2_out, alu_ops'(funct3));

@@ -8,17 +8,27 @@ typedef enum bit [1:0] {
 endpackage
 
 package cmpmux;
-typedef enum bit {
-    rs2_out = 1'b0
-    ,i_imm = 1'b1
-} cmpmux_sel_t;
+typedef enum bit [1:0] {
+    rs1_out = 2'b00
+    ,cmpmux1_alu_out = 2'b01
+    ,cmpmux1_regfilemux_out = 2'b10
+    ,cmpmux1_regfile_imm_out = 2'b11
+} cmpmux1_sel_t;
+
+typedef enum bit [2:0] {
+    rs2_out = 3'b000
+    ,i_imm = 3'b001
+    ,cmpmux2_alu_out = 3'b010
+    ,cmpmux2_regfilemux_out = 3'b011
+    ,cmpmux2_regfile_imm_out = 3'b100
+} cmpmux2_sel_t;
 endpackage
 
 package alumux;
 typedef enum bit [2:0] {
     rs1_out = 3'b000
     ,pc_out = 3'b001
-    ,alumux1_alumux_out = 3'b010
+    ,alumux1_alu_out = 3'b010
     ,alumux1_regfilemux_out = 3'b011
     ,alumux1_regfile_imm_out = 3'b100
 } alumux1_sel_t;
@@ -30,7 +40,7 @@ typedef enum bit [3:0] {
     ,s_imm   = 4'b0011
     ,j_imm   = 4'b0100
     ,rs2_out = 4'b0101
-    ,alumux2_alumux_out = 4'b0110
+    ,alumux2_alu_out = 4'b0110
     ,alumux2_regfilemux_out = 4'b0111
     ,alumux2_regfile_imm_out = 4'b1000
 } alumux2_sel_t;
