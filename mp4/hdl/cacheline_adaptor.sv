@@ -76,7 +76,7 @@ module cacheline_adaptor
                 end
             end
             STEP1: begin
-                state_in = resp_i ? STEP2 : STEP1;
+                state_in = resp_i === 1'b1 ? STEP2 : STEP1;
                 if (read_write == 1'b0) line_o_in[64*0 +: 64] = burst_i;
                 else burst_o = line_i[64*0 +: 64];
             end

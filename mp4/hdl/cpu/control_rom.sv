@@ -96,11 +96,17 @@ always_comb begin
             ctrl.d_read = 1'b1;
             // TODO: may optimize out this mux by rearranging mux literals
             unique case(load_funct3_t'(funct3))
-                rv32i_types::lb:  loadRegfile(regfilemux::lb);
-                rv32i_types::lh:  loadRegfile(regfilemux::lh);
-                rv32i_types::lw:  loadRegfile(regfilemux::lw);
-                rv32i_types::lbu: loadRegfile(regfilemux::lbu);
-                rv32i_types::lhu: loadRegfile(regfilemux::lhu);
+                lb:  loadRegfile(regfilemux::lb);
+                lh:  loadRegfile(regfilemux::lh);
+                lw:  loadRegfile(regfilemux::lw);
+                lbu: loadRegfile(regfilemux::lbu);
+                lhu: loadRegfile(regfilemux::lhu);
+                default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
+            endcase
+            unique case(load_funct3_t'(funct3))
+                lb, lbu:  ctrl.d_byte_enable = 4'b0001; 
+                lh, lhu:  ctrl.d_byte_enable = 4'b0011;
+                lw:       ctrl.d_byte_enable = 4'b1111;
                 default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
             ctrl.rs1_read = 1'b1;

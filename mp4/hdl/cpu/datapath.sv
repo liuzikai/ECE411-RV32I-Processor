@@ -363,63 +363,13 @@ register pc_wdata_imm4(
     .out(rvfi_pc_wdata)
 );
 
-// rvfi_d_addr
-rv32i_word rvfi_d_addr;
-register d_addr_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_WB),
-    .in(d_addr),  // use aligned value
-    .out(rvfi_d_addr)
-);
-
-// rvfi_d_rdata
-rv32i_word rvfi_d_rdata;
-register d_rdata_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_WB),
-    .in(d_rdata),  // use aligned value
-    .out(rvfi_d_rdata)
-);
-
-// rvfi_d_wdata
-rv32i_word rvfi_d_wdata;
-register d_wdata_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_WB),
-    .in(d_wdata),  // use aligned value
-    .out(rvfi_d_wdata)
-);
-
-// rvfi_d_rmask
-logic [3:0] rvfi_d_rmask;
-register d_rmask_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_WB),
-    .in(d_read ? d_byte_enable : 4'b0),  // use aligned value
-    .out(rvfi_d_rmask)
-);
-
-// rvfi_d_wmask
-logic [3:0] rvfi_d_wmask;
-register d_wmask_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_WB),
-    .in(d_write ? d_byte_enable : 4'b0),  // use aligned value
-    .out(rvfi_d_wmask)
-);
-
 // rvfi_rd_addr
 rv32i_reg rvfi_rd_addr;
 assign rvfi_rd_addr = (regfile_wb ? regfile_rd : 5'b0);
 
 // rvfi_rd_wdata
 rv32i_word rvfi_rd_wdata;
-assign rvfi_rd_wdata = regfile_in;
+assign rvfi_rd_wdata = (rvfi_rd_addr ? regfile_in: 32'b0);
 
 // rvfi_rs1_rdata
 rv32i_word rs1_rdata_imm1_out, rs1_rdata_imm2_out, rvfi_rs1_rdata;

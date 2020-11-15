@@ -24,7 +24,7 @@ bit f;
 /************************ Signals necessary for monitor **********************/
 // This section not required until CP2
 
-assign rvfi.commit = (dut.cpu.control.MEM_WB.opcode != op_none) && ~dut.cpu.stall_WB; // Set high when a valid instruction is modifying regfile or PC
+assign rvfi.commit = (dut.cpu.control.MEM_WB.opcode != rv32i_types::op_none) && ~dut.cpu.stall_WB; // Set high when a valid instruction is modifying regfile or PC
 assign rvfi.halt = 0;   // Set high when you detect an infinite loop
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
@@ -47,11 +47,11 @@ assign rvfi.pc_rdata = dut.cpu.datapath.rvfi_pc_rdata;
 assign rvfi.pc_wdata = dut.cpu.datapath.rvfi_pc_wdata;
 
 // Memory
-assign rvfi.mem_addr = dut.cpu.datapath.rvfi_d_addr;
-assign rvfi.mem_rmask = dut.cpu.datapath.rvfi_d_rmask;
-assign rvfi.mem_wmask = dut.cpu.datapath.rvfi_d_wmask;
-assign rvfi.mem_rdata = dut.cpu.datapath.rvfi_d_rdata;
-assign rvfi.mem_wdata = dut.cpu.datapath.rvfi_d_wdata;
+assign rvfi.mem_addr = dut.cpu.rvfi_d_addr;
+assign rvfi.mem_rmask = dut.cpu.rvfi_d_rmask;
+assign rvfi.mem_wmask = dut.cpu.rvfi_d_wmask;
+assign rvfi.mem_rdata = dut.cpu.rvfi_d_rdata;
+assign rvfi.mem_wdata = dut.cpu.rvfi_d_wdata;
 
 /**************************** End RVFIMON signals ****************************/
 
@@ -59,7 +59,7 @@ assign rvfi.mem_wdata = dut.cpu.datapath.rvfi_d_wdata;
 
 // icache signals
 assign itf.inst_read = dut.i_read;
-assign itf.inst_addr = dut.i_addr
+assign itf.inst_addr = dut.i_addr;
 assign itf.inst_resp = dut.i_resp;
 assign itf.inst_rdata = dut.i_rdata;
 
