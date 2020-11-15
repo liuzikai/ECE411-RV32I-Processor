@@ -1,3 +1,7 @@
+# Written by Kerui Zhu on Nov 15th, 2020
+
+import sys
+
 class Opcode:
     op_lui   = 0b0110111
     op_auipc = 0b0010111
@@ -72,11 +76,11 @@ def decode(inst):
         imm = ((inst >> 25) << 5) | ((inst >> 7) & 0b011111)
         funct3 = (inst >> 12) & 0b0111
         if funct3 == 0:
-            print('sb x' + str(rs1) + ' ' + str(imm) + ' (x' + str(rs2) + ')')
+            print('sb x' + str(rs1) + ' ' + str(imm) + '(x' + str(rs2) + ')')
         elif funct3 == 1:
-            print('sh x' + str(rs1) + ' ' + str(imm) + ' (x' + str(rs2) + ')')
+            print('sh x' + str(rs1) + ' ' + str(imm) + '(x' + str(rs2) + ')')
         elif funct3 == 2:
-            print('sw x' + str(rs1) + ' ' + str(imm) + ' (x' + str(rs2) + ')')
+            print('sw x' + str(rs1) + ' ' + str(imm) + '(x' + str(rs2) + ')')
         else:
             print('store, decode your self')
     elif opcode == Opcode.op_imm:
@@ -85,17 +89,17 @@ def decode(inst):
         rs1 = (inst >> 15) & 0b011111
         imm = inst >> 20
         if funct3 == 0:
-            print('addi x' + str(rd) + ' ' + str(imm) + ' (x' + str(rs1) + ')')
+            print('addi x' + str(rd) + ' x' + str(rs1) + ' ' + str(imm))
         elif funct3 == 2:
-            print('slti x' + str(rd) + ' ' + str(imm) + ' (x' + str(rs1) + ')')
+            print('slti x' + str(rd) + ' x' + str(rs1) + ' ' + str(imm))
         elif funct3 == 3:
-            print('sltiu x' + str(rd) + ' ' + str(imm) + ' (x' + str(rs1) + ')')
+            print('sltiu x' + str(rd) + ' x' + str(rs1) + ' ' + str(imm))
         elif funct3 == 4:
-            print('xori x' + str(rd) + ' ' + str(imm) + ' (x' + str(rs1) + ')')
+            print('xori x' + str(rd) + ' x' + str(rs1) + ' ' + str(imm))
         elif funct3 == 6:
-            print('ori x' + str(rd) + ' ' + str(imm) + ' (x' + str(rs1) + ')')
+            print('ori x' + str(rd) + ' x' + str(rs1) + ' ' + str(imm))
         elif funct3 == 7:
-            print('andi x' + str(rd) + ' ' + str(imm) + ' (x' + str(rs1) + ')')
+            print('andi x' + str(rd) + ' x' + str(rs1) + ' ' + str(imm))
         else:
             print('imm, decode your self')
     elif opcode == Opcode.op_reg:
@@ -132,3 +136,8 @@ def decode(inst):
         print('csr, decode your self')
     elif opcode == Opcode.op_none:
         print("none")
+    else:
+        print("Unrecognized opcode")
+
+if __name__ == '__main__':
+    decode(int(sys.argv[1], 16))
