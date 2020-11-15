@@ -6,11 +6,11 @@ module pc_register #(parameter width = 32) (
     output logic [width-1:0] out
 );
 
+logic [width-1:0] data = 1'b0;
+
 /*
  * PC needs to start at 0x60
  */
-logic [width-1:0] data;
-
 always_ff @(posedge clk) begin
     if (rst) begin
         data <= 32'h00000060;

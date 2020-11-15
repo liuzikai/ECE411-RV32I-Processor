@@ -41,7 +41,8 @@ initial begin
             forever begin
                 @(sm_itf.smcb iff sm_itf.smcb.read_a)
                 rdata_inst = read(sm_itf.smcb.address_a);
-                @(sm_itf.smcb iff sm_itf.smcb.resp_a)
+                // @(sm_itf.smcb iff sm_itf.smcb.resp_a)
+                wait (sm_itf.smcb.resp_a)  // NOTE: [liuzikai] doesn't need to wait at least one cycle
                 if (rdata_inst != sm_itf.smcb.rdata_a) begin
                     $display("%0t: ShadowMemory Error: Mismatch rdata:", $time,
                         " Expected %8h, Detected %8h", rdata_inst,
@@ -63,7 +64,8 @@ initial begin
                             sm_itf.smcb.mbe);
                     _read_data = 1'b0;
                 end
-                @(sm_itf.smcb iff sm_itf.smcb.resp_b)
+                // @(sm_itf.smcb iff sm_itf.smcb.resp_b)
+                wait (sm_itf.smcb.resp_b)  // NOTE: [liuzikai] doesn't need to wait at least one cycle
                 if (_read_data) begin
                     if (rdata_data != sm_itf.smcb.rdata_b) begin
                         $display("%0t: ShadowMemory Error: Mismatch rdata:", $time,
