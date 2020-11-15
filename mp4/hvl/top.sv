@@ -25,7 +25,7 @@ bit f;
 // This section not required until CP2
 
 assign rvfi.commit = (dut.cpu.control.MEM_WB.opcode != rv32i_types::op_none) && ~dut.cpu.stall_WB; // Set high when a valid instruction is modifying regfile or PC
-assign rvfi.halt = 0;   // Set high when you detect an infinite loop
+assign rvfi.halt = (rvfi.commit && dut.cpu.datapath.rvfi_insn === 32'h00000063);   // Set high when you detect an infinite loop
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 
@@ -36,8 +36,8 @@ assign rvfi.trap = 1'b0;
 // Regfile
 assign rvfi.rs1_addr = dut.cpu.control.MEM_WB_reg.rs1;
 assign rvfi.rs2_addr = dut.cpu.control.MEM_WB_reg.rs2;
-assign rvfi.rs1_rdata = dut.cpu.datapath.rvfi_rs1_rdata;
-assign rvfi.rs2_rdata = dut.cpu.datapath.rvfi_rs2_rdata;
+assign rvfi.rs1_rdata = dut.cpu.datapath.regfile.data[rvfi.rs1_addr];
+assign rvfi.rs2_rdata = dut.cpu.datapath.regfile.data[rvfi.rs2_addr];
 assign rvfi.load_regfile = dut.cpu.datapath.regfile_wb;
 assign rvfi.rd_addr = dut.cpu.datapath.rvfi_rd_addr;
 assign rvfi.rd_wdata = dut.cpu.datapath.rvfi_rd_wdata;
