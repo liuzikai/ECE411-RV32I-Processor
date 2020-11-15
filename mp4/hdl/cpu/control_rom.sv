@@ -22,6 +22,7 @@ function void set_defaults();
     ctrl.regfilemux_sel = regfilemux::alu_out;
     ctrl.cmpmux1_sel = cmpmux::rs1_out;
     ctrl.cmpmux2_sel = cmpmux::rs2_out;
+    ctrl.mwdrmux_sel = mwdrmux::rs2_out;
     ctrl.use_cmp = 1'b0;
     ctrl.aluop = alu_ops'(funct3);
     ctrl.cmpop = branch_funct3_t'(funct3);

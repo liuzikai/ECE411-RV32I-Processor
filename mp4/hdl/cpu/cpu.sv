@@ -36,6 +36,7 @@ cmpmux::cmpmux1_sel_t cmpmux1_sel;
 cmpmux::cmpmux2_sel_t cmpmux2_sel;
 alumux::alumux1_sel_t alumux1_sel;
 alumux::alumux2_sel_t alumux2_sel;
+mwdrmux::mwdrmux_sel_t mwdrmux_sel;
 
 alu_ops aluop;
 branch_funct3_t cmpop;

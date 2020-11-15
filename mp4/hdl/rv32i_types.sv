@@ -86,6 +86,7 @@ typedef struct packed {
     regfilemux::regfilemux_sel_t regfilemux_sel;
     cmpmux::cmpmux1_sel_t cmpmux1_sel;
     cmpmux::cmpmux2_sel_t cmpmux2_sel;
+    mwdrmux::mwdrmux_sel_t mwdrmux_sel;
     logic use_cmp;
     alu_ops aluop;
     branch_funct3_t cmpop;

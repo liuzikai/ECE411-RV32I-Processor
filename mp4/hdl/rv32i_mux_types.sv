@@ -49,10 +49,10 @@ endpackage
 package mwdrmux;
 typedef enum bit [1:0] {
     rs2_out = 2'b00
-    ,mwdrmux1_alu_out = 2'b01
-    ,mwdrmux1_regfilemux_out = 2'b10
-    ,mwdrmux1_regfile_imm_out = 2'b11
-} mwdrmux1_sel_t;
+    ,mwdrmux_alu_out = 2'b01
+    ,mwdrmux_regfilemux_out = 2'b10
+    ,mwdrmux_regfile_imm_out = 2'b11
+} mwdrmux_sel_t;
 endpackage
 
 package regfilemux;

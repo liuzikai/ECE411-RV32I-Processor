@@ -18,6 +18,7 @@ module control
     output cmpmux::cmpmux2_sel_t cmpmux2_sel,
     output alumux::alumux1_sel_t alumux1_sel,
     output alumux::alumux2_sel_t alumux2_sel,
+    output mwdrmux::mwdrmux_sel_t mwdrmux_sel,
 
     // ID-EX
     output alu_ops aluop,
@@ -65,6 +66,7 @@ function void set_defaults();
     cmpmux2_sel = IF_ID.cmpmux2_sel;
     alumux1_sel = IF_ID.alumux1_sel;
     alumux2_sel = IF_ID.alumux2_sel;
+    mwdrmux_sel = IF_ID.mwdrmux_sel;
 
     // ID-EX
     aluop = ID_EX.aluop;
@@ -106,6 +108,7 @@ always_comb begin : FLUSH_ASSIGN
     FLUSH.regfilemux_sel = regfilemux::regfilemux_sel_t'(4'b0000);
     FLUSH.cmpmux1_sel = cmpmux::cmpmux1_sel_t'(2'b00);
     FLUSH.cmpmux2_sel = cmpmux::cmpmux2_sel_t'(3'b000);
+    FLUSH.mwdrmux_sel = mwdrmux::mwdrmux_sel_t'(2'b00);
     FLUSH.use_cmp = 1'b0;
     FLUSH.aluop = alu_ops'(3'b000);
     FLUSH.cmpop = branch_funct3_t'(3'b000);
@@ -162,18 +165,24 @@ always_comb begin : MAIN_COMB
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
             end else if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_alu_out;
+            end else if (IF_ID.opcode == op_store) begin
+                mwdrmux_sel = mwdrmux::mwdrmux_alu_out;
             end else begin
                 alumux2_sel = alumux::alumux2_alu_out;
             end
         end else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
             if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_regfilemux_out;
+            end else if (IF_ID.opcode == op_store) begin
+                mwdrmux_sel = mwdrmux::mwdrmux_regfilemux_out;
             end else begin
                 alumux2_sel = alumux::alumux2_regfilemux_out;
             end
         end else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs2) begin
             if (IF_ID.use_cmp == 1'b1) begin
                 cmpmux2_sel = cmpmux::cmpmux2_regfile_imm_out;
+            end else if (IF_ID.opcode == op_store) begin
+                mwdrmux_sel = mwdrmux::mwdrmux_regfile_out;
             end else begin
                 alumux2_sel = alumux::alumux2_regfile_imm_out;
             end

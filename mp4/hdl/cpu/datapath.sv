@@ -22,6 +22,7 @@ module datapath(
     input regfilemux::regfilemux_sel_t regfilemux_sel,
     input cmpmux::cmpmux1_sel_t cmpmux1_sel,
     input cmpmux::cmpmux2_sel_t cmpmux2_sel,
+    input mwdrmux::mwdrmux_sel_t mwdrmux_sel,
     input pcmux::pcmux_sel_t pcmux_sel,
 
     // Signals to ALU, CMP and regfile
@@ -65,7 +66,7 @@ rv32i_word pc_out, pc_imm1_out;
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out, mwdr_imm_out;
 rv32i_word u_imm1_out, u_imm2_out, cmp_wb_imm_out, cmpmux1_out, cmpmux2_out;
-rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, pcmux_out;
+rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, pcmux_out, mwdrmux_out;
 
 assign i_addr = pc_out;
 
@@ -142,7 +143,7 @@ register mwdr_imm(
     .clk(clk),
     .rst(rst),
     .load(~stall_EX),
-    .in(rs2_out),
+    .in(mwdrmux_out),
     .out(mwdr_imm_out)
 );
 
@@ -306,6 +307,14 @@ always_comb begin : MUXES
         default: `BAD_MUX_SEL;
     endcase
 
+    // mwdrmux
+    unique case (mwdrmux_sel)
+        mwdrmux::rs2_out:                    mwdrmux_out = rs2_out;
+        mwdrmux::mwdrmux1_alu_out:           mwdrmux_out = alu_out;
+        mwdrmux::mwdrmux1_regfilemux_out:    mwdrmux_out = regfilemux_out;
+        mwdrmux::mwdrmux1_regfile_imm_out:   mwdrmux_out = regfile_in;
+        default: `BAD_MUX_SEL;
+    endcase
 end
 
 
