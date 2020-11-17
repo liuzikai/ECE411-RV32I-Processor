@@ -127,7 +127,7 @@ end
 
 always_comb begin : MAIN_COMB
     set_defaults();
-    if (ID_EX.opcode == op_br && br_en) begin
+    if ((ID_EX.opcode == op_br && br_en) || ID_EX.opcode == op_jal || ID_EX.opcode == op_jalr) begin
         flush_list[1:0] = 2'b11; // Flush the IF_ID and ID_EX control words
     end
     if (IF_ID.rs1_read && IF_ID_reg.rs1) begin
