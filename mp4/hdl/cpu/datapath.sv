@@ -61,7 +61,7 @@ rv32i_word rs1_out, rs2_out;
 rv32i_word alu_out;
 
 // Output of PC and chained intermediate registers
-rv32i_word pc_out, pc_imm1_out;
+rv32i_word pc_out, pc_imm1_out, pc_imm2_out, pc_imm3_out, rvfi_pc_rdata;
 
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out, mwdr_imm_out;
@@ -69,6 +69,8 @@ rv32i_word u_imm1_out, u_imm2_out, cmp_wb_imm_out, cmpmux1_out, cmpmux2_out;
 rv32i_word alumux1_out, alumux2_out, regfilemux_out, marmux_out, pcmux_out, mwdrmux_out;
 
 assign i_addr = pc_out;
+
+logic ld_pc;
 
 // ================================ Registers ================================
 
@@ -110,7 +112,7 @@ register u_imm2(
 pc_register PC(
     .clk(clk),
     .rst(rst),
-    .load((~stall_ID) || (~stall_EX && (pcmux_sel == pcmux::alu_out || pcmux_sel == pcmux::alu_mod2 || (pcmux_sel == pcmux::br && br_en)))),
+    .load(ld_pc),
     .in(pcmux_out),
     .out(pc_out)
 );
@@ -121,6 +123,28 @@ register pc_imm1(
     .load(~stall_ID),
     .in(pc_out),
     .out(pc_imm1_out)
+);
+
+register pc_imm2(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_EX),
+    .in(pc_imm1_out),
+    .out(pc_imm2_out)
+);
+register pc_imm3(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_MEM),
+    .in(pc_imm2_out),
+    .out(pc_imm3_out)
+);
+register pc_imm4(
+    .clk(clk),
+    .rst(rst),
+    .load(~stall_WB),
+    .in(pc_imm3_out),
+    .out(rvfi_pc_rdata)
 );
 
 register MDAR(
@@ -241,12 +265,31 @@ always_comb begin : MUXES
     // Offensive programming --- making simulation halt with a fatal message
     // warning when an unexpected mux select value occurs
 
+    ld_pc = 1'b0;
     // pcmux
     unique case (pcmux_sel)
-        pcmux::pc_plus4: pcmux_out = pc_out + 4;
-        pcmux::br:       pcmux_out = (br_en ? alu_out : pc_out + 4);
-        pcmux::alu_out:  pcmux_out = alu_out;
-        pcmux::alu_mod2: pcmux_out = {alu_out[31:1], 1'b0};
+        pcmux::pc_plus4: begin
+            pcmux_out = pc_out + 4;
+            ld_pc = ~stall_ID;
+        end
+        pcmux::br: begin
+            if (br_en) begin
+                pcmux_out = alu_out;
+                ld_pc = ~stall_EX;
+            end else begin
+                pcmux_out = pc_out + 4;
+                ld_pc = ~stall_ID;
+            end
+            
+        end
+        pcmux::alu_out: begin
+            pcmux_out = alu_out;
+            ld_pc = ~stall_EX;
+        end
+        pcmux::alu_mod2: begin
+            pcmux_out = {alu_out[31:1], 1'b0};
+            ld_pc = ~stall_EX;
+        end
         default: `BAD_MUX_SEL;
     endcase
 
@@ -256,7 +299,7 @@ always_comb begin : MUXES
         regfilemux::alu_out:  regfilemux_out = alu_wb_imm_out;
         regfilemux::br_en:    regfilemux_out = cmp_wb_imm_out;
         regfilemux::u_imm:    regfilemux_out = u_imm2_out;
-        regfilemux::pc_plus4: regfilemux_out = pc_out + 4;
+        regfilemux::pc_plus4: regfilemux_out = pc_imm3_out + 4;
         regfilemux::lw:       regfilemux_out = d_rdata;
         regfilemux::lb:       regfilemux_out = {{24{d_rdata[7]}}, d_rdata[7:0]};
         regfilemux::lbu:      regfilemux_out = {24'b0, d_rdata[7:0]};
@@ -319,30 +362,6 @@ end
 
 
 // ================================ Signals and Intermediate Registers for RVFI ================================
-
-// rvfi_pc_rdata
-rv32i_word pc_imm2_out, pc_imm3_out, rvfi_pc_rdata;
-register pc_imm2(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_EX),
-    .in(pc_imm1_out),
-    .out(pc_imm2_out)
-);
-register pc_imm3(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_MEM),
-    .in(pc_imm2_out),
-    .out(pc_imm3_out)
-);
-register pc_imm4(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_WB),
-    .in(pc_imm3_out),
-    .out(rvfi_pc_rdata)
-);
 
 // rvfi_pc_wdata
 rv32i_word pc_wdata_imm1_out, pc_wdata_imm2_out, pc_wdata_imm3_in, pc_wdata_imm3_out, rvfi_pc_wdata;

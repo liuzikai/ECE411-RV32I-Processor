@@ -87,6 +87,7 @@ always_comb begin
             setALU(alumux::rs1_out, alumux::i_imm, alu_add); 
             loadPC(pcmux::alu_mod2);
             loadRegfile(regfilemux::pc_plus4);
+            ctrl.rs1_read = 1'b1;
         end
         op_br: begin  // branch (B type)
             setALU(alumux::pc_out, alumux::b_imm, alu_add);
