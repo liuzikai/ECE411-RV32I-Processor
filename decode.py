@@ -25,7 +25,7 @@ def decode(inst):
     elif opcode == Opcode.op_auipc:
         rd = (inst >> 7) & 0b011111
         imm = inst >> 12
-        print('auipc, decode your self')
+        print('auipc, rd is '+str(rd)+' and imm is '+str(imm))
     elif opcode == Opcode.op_jal:
         print('jal, decode your self')
     elif opcode == Opcode.op_jalr:
