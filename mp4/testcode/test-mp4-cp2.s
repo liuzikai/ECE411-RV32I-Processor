@@ -93,19 +93,20 @@ forwarding_tests:
     add x3, x6, x2  # x3 <- 8
     add x4, x2, x2  # x4 <- 4
 
-    la  x8, TEST
-    sw  x8, 0(x8)   # TEST <- addr(TEST)
+    la  x8, MYTEST1 # x8 <- addr(MYTEST1)
+    la  x2, MYTEST2 # x2 <- addr(MYTEST2)
+    sw  x8, 0(x2)   # MYTEST2 = addr(MYTEST1)
 
-    lw  x2, TEST    # x2 <- addr(TEST)
-    sw  x3, (x2)    # TEST <- 8
-    sw  x4, (x2)    # TEST <- 4
-    sw  x6, (x2)    # TEST <- 6
+    lw  x2, 0(x2)   # x2 <- addr(MYTEST1)
+    sw  x3, 0(x2)   # MYTEST1 <- 8
+    sw  x4, 0(x2)   # MYTEST1 <- 4
+    sw  x6, 0(x2)   # MYTEST1 <- 6
 
-    add x2, x2, 1   # x2 <- addr(TEST) + 1
-    add x2, x2, -1  # x2 <- addr(TEST)
-    sw  x3, (x2)    # TEST <- 8
-    sw  x4, (x2)    # TEST <- 4
-    sw  x6, (x2)    # TEST <- 6
+    add x2, x2, 1   # x2 <- addr(MYTEST1) + 1
+    add x2, x2, -1  # x2 <- addr(MYTEST1)
+    sw  x3, 0(x2)   # MYTEST1 <- 8
+    sw  x4, 0(x2)   # MYTEST1 <- 4
+    sw  x6, 0(x2)   # MYTEST1 <- 6
 
 
 halt:
@@ -168,6 +169,23 @@ C:      .word 0x00000003
 # cache line boundary
 
 D:      .word 0x00000004
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+
+MYTEST1: .word 0x00000005
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+MYTEST2: .word 0x00000006
         nop
         nop
         nop
