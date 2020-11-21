@@ -110,6 +110,7 @@ always_comb begin : FLUSH_ASSIGN
     FLUSH.cmpmux2_sel = cmpmux::cmpmux2_sel_t'(3'b000);
     FLUSH.mwdrmux_sel = mwdrmux::mwdrmux_sel_t'(2'b00);
     FLUSH.use_cmp = 1'b0;
+    FLUSH.use_cmp_output = 1'b0;
     FLUSH.aluop = alu_ops'(3'b000);
     FLUSH.cmpop = branch_funct3_t'(3'b000);
     FLUSH.pcmux_sel = pcmux::pc_plus4;
@@ -137,9 +138,9 @@ always_comb begin : MAIN_COMB
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
             end else if (IF_ID.use_cmp == 1'b1) begin
-                cmpmux1_sel = cmpmux::cmpmux1_alu_out;
+                cmpmux1_sel = (ID_EX.use_cmp_output) ? cmpmux::cmpmux1_cmp_out : cmpmux::cmpmux1_alu_out;
             end else begin
-                alumux1_sel = alumux::alumux1_alu_out;
+                alumux1_sel = (ID_EX.use_cmp_output) ? alumux::alumux1_cmp_out : alumux::alumux1_alu_out;
             end
         end
         else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs1) begin
@@ -164,11 +165,11 @@ always_comb begin : MAIN_COMB
                 stall_decode = 1'b1; // Stall the update of IF_ID
                 flush_list[1] = 1'b1; // Insert bubble to the ID_EX
             end else if (IF_ID.use_cmp == 1'b1) begin
-                cmpmux2_sel = cmpmux::cmpmux2_alu_out;
+                cmpmux2_sel = (ID_EX.use_cmp_output) ? cmpmux::cmpmux2_cmp_out : cmpmux::cmpmux2_alu_out;
             end else if (IF_ID.opcode == op_store) begin
-                mwdrmux_sel = mwdrmux::mwdrmux_alu_out;
+                mwdrmux_sel = (ID_EX.use_cmp_output) ? mwdrmux::mwdrmux_cmp_out : mwdrmux::mwdrmux_alu_out;
             end else begin
-                alumux2_sel = alumux::alumux2_alu_out;
+                alumux2_sel = (ID_EX.use_cmp_output) ? alumux::alumux2_cmp_out : alumux::alumux2_alu_out;
             end
         end else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
             if (IF_ID.use_cmp == 1'b1) begin

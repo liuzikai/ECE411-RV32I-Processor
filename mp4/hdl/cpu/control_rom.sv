@@ -24,6 +24,7 @@ function void set_defaults();
     ctrl.cmpmux2_sel = cmpmux::rs2_out;
     ctrl.mwdrmux_sel = mwdrmux::rs2_out;
     ctrl.use_cmp = 1'b0;
+    ctrl.use_cmp_output = 1'b0;
     ctrl.aluop = alu_ops'(funct3);
     ctrl.cmpop = branch_funct3_t'(funct3);
 
@@ -136,11 +137,13 @@ always_comb begin
                     setCMP(cmpmux::i_imm, blt);
                     loadRegfile(regfilemux::br_en);
                     ctrl.use_cmp = 1'b1;
+                    ctrl.use_cmp_output = 1'b1;
                 end
                 sltu: begin
                     setCMP(cmpmux::i_imm, bltu);
                     loadRegfile(regfilemux::br_en);
                     ctrl.use_cmp = 1'b1;
+                    ctrl.use_cmp_output = 1'b1;
                 end
                 sr: begin
                     if (funct7 == 7'b0100000) begin  // if this is SRA
@@ -183,11 +186,13 @@ always_comb begin
                     setCMP(cmpmux::rs2_out, blt);
                     loadRegfile(regfilemux::br_en);
                     ctrl.use_cmp = 1'b1;
+                    ctrl.use_cmp_output = 1'b1;
                 end
                 sltu: begin
                     setCMP(cmpmux::rs2_out, bltu);
                     loadRegfile(regfilemux::br_en);
                     ctrl.use_cmp = 1'b1;
+                    ctrl.use_cmp_output = 1'b1;
                 end
                 default: begin
                     setALU(alumux::rs1_out, alumux::rs2_out, alu_ops'(funct3));
