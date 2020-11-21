@@ -76,6 +76,7 @@ always_comb begin
             loadRegfile(regfilemux::alu_out);
         end
         op_lui: begin  // load upper immediate (U type)
+            setALU(alumux::zero, alumux::u_imm, alu_add);
             loadRegfile(regfilemux::u_imm);
         end
         op_jal: begin  // jump and link (J type)

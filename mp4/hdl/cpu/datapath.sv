@@ -315,6 +315,7 @@ always_comb begin : MUXES
         alumux::alumux1_alu_out: alumux1_out = alu_out;
         alumux::alumux1_regfilemux_out: alumux1_out = regfilemux_out;
         alumux::alumux1_regfile_imm_out: alumux1_out = regfile_in;
+        alumux::zero: alumux1_out = 0;
         default: `BAD_MUX_SEL;
     endcase
 

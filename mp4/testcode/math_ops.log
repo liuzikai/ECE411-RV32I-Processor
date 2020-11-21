@@ -1,0 +1,116 @@
+
+/var/folders/m7/41pr8n2n6xb_qvh8c7kb1tth0000gn/T/tmp.cbU2b32i/math_ops.s.obj:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010060 <_start>:
+   10060:	00000097          	auipc	x1,0x0
+   10064:	0c40a083          	lw	x1,196(x1) # 10124 <zero>
+   10068:	00208093          	addi	x1,x1,2
+   1006c:	0030a113          	slti	x2,x1,3
+   10070:	0010a113          	slti	x2,x1,1
+   10074:	00000097          	auipc	x1,0x0
+   10078:	0c00a083          	lw	x1,192(x1) # 10134 <set>
+   1007c:	07f0c093          	xori	x1,x1,127
+   10080:	00000097          	auipc	x1,0x0
+   10084:	0a40a083          	lw	x1,164(x1) # 10124 <zero>
+   10088:	07f0e093          	ori	x1,x1,127
+   1008c:	00000097          	auipc	x1,0x0
+   10090:	0a80a083          	lw	x1,168(x1) # 10134 <set>
+   10094:	0000f093          	andi	x1,x1,0
+   10098:	000020b7          	lui	x1,0x2
+   1009c:	0010d093          	srli	x1,x1,0x1
+   100a0:	00109093          	slli	x1,x1,0x1
+   100a4:	000010b7          	lui	x1,0x1
+   100a8:	00c0d093          	srli	x1,x1,0xc
+   100ac:	00002137          	lui	x2,0x2
+   100b0:	00c15113          	srli	x2,x2,0xc
+   100b4:	002080b3          	add	x1,x1,x2
+   100b8:	402080b3          	sub	x1,x1,x2
+   100bc:	002090b3          	sll	x1,x1,x2
+   100c0:	0020a1b3          	slt	x3,x1,x2
+   100c4:	001121b3          	slt	x3,x2,x1
+   100c8:	00000097          	auipc	x1,0x0
+   100cc:	0600a083          	lw	x1,96(x1) # 10128 <a>
+   100d0:	00000117          	auipc	x2,0x0
+   100d4:	05c12103          	lw	x2,92(x2) # 1012c <b>
+   100d8:	00000197          	auipc	x3,0x0
+   100dc:	04c1a183          	lw	x3,76(x3) # 10124 <zero>
+   100e0:	0020b1b3          	sltu	x3,x1,x2
+   100e4:	001131b3          	sltu	x3,x2,x1
+   100e8:	00004137          	lui	x2,0x4
+   100ec:	00c15113          	srli	x2,x2,0xc
+   100f0:	0020d0b3          	srl	x1,x1,x2
+   100f4:	4020d0b3          	sra	x1,x1,x2
+   100f8:	00000097          	auipc	x1,0x0
+   100fc:	0380a083          	lw	x1,56(x1) # 10130 <c>
+   10100:	00000117          	auipc	x2,0x0
+   10104:	02c12103          	lw	x2,44(x2) # 1012c <b>
+   10108:	0020c0b3          	xor	x1,x1,x2
+   1010c:	00000097          	auipc	x1,0x0
+   10110:	0240a083          	lw	x1,36(x1) # 10130 <c>
+   10114:	00000117          	auipc	x2,0x0
+   10118:	01812103          	lw	x2,24(x2) # 1012c <b>
+   1011c:	0020f0b3          	and	x1,x1,x2
+
+00010120 <done>:
+   10120:	00000063          	beqz	x0,10120 <done>
+
+Disassembly of section .rodata:
+
+00010124 <zero>:
+   10124:	0000                	unimp
+	...
+
+00010128 <a>:
+   10128:	0000                	unimp
+   1012a:	f000                	fsw	f8,32(x8)
+
+0001012c <b>:
+   1012c:	0001                	nop
+   1012e:	f000                	fsw	f8,32(x8)
+
+00010130 <c>:
+   10130:	abc1                	j	10700 <set+0x5cc>
+   10132:	f000                	fsw	f8,32(x8)
+
+00010134 <set>:
+   10134:	ffff                	0xffff
+   10136:	ffff                	0xffff
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1e41                	addi	x28,x28,-16
+   2:	0000                	unimp
+   4:	7200                	flw	f8,32(x12)
+   6:	7369                	lui	x6,0xffffa
+   8:	01007663          	bgeu	x0,x16,14 <_start-0x1004c>
+   c:	0014                	0x14
+   e:	0000                	unimp
+  10:	7205                	lui	x4,0xfffe1
+  12:	3376                	fld	f6,376(x2)
+  14:	6932                	flw	f18,12(x2)
+  16:	7032                	flw	f0,44(x2)
+  18:	5f30                	lw	x12,120(x14)
+  1a:	326d                	jal	fffff9c4 <__global_pointer$+0xfffee08c>
+  1c:	3070                	fld	f12,224(x8)
+	...
+0000000 97 00 00 00 83 a0 40 0c 93 80 20 00 13 a1 30 00
+0000010 13 a1 10 00 97 00 00 00 83 a0 00 0c 93 c0 f0 07
+0000020 97 00 00 00 83 a0 40 0a 93 e0 f0 07 97 00 00 00
+0000030 83 a0 80 0a 93 f0 00 00 b7 20 00 00 93 d0 10 00
+0000040 93 90 10 00 b7 10 00 00 93 d0 c0 00 37 21 00 00
+0000050 13 51 c1 00 b3 80 20 00 b3 80 20 40 b3 90 20 00
+0000060 b3 a1 20 00 b3 21 11 00 97 00 00 00 83 a0 00 06
+0000070 17 01 00 00 03 21 c1 05 97 01 00 00 83 a1 c1 04
+0000080 b3 b1 20 00 b3 31 11 00 37 41 00 00 13 51 c1 00
+0000090 b3 d0 20 00 b3 d0 20 40 97 00 00 00 83 a0 80 03
+00000a0 17 01 00 00 03 21 c1 02 b3 c0 20 00 97 00 00 00
+00000b0 83 a0 40 02 17 01 00 00 03 21 81 01 b3 f0 20 00
+00000c0 63 00 00 00 00 00 00 00 00 00 00 f0 01 00 00 f0
+00000d0 c1 ab 00 f0 ff ff ff ff                        
+00000d8
+Target file /Users/liuzikai/Documents/Courses/ECE 411/0_warning_0_error/mp4/bin/../simulation/modelsim/memory.lst exists.
+Assembled ../testcode/math_ops.s and wrote memory contents to /Users/liuzikai/Documents/Courses/ECE 411/0_warning_0_error/mp4/bin/../simulation/modelsim/memory.lst

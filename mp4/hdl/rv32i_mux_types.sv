@@ -31,6 +31,7 @@ typedef enum bit [2:0] {
     ,alumux1_alu_out = 3'b010
     ,alumux1_regfilemux_out = 3'b011
     ,alumux1_regfile_imm_out = 3'b100
+    ,zero = 3'b101
 } alumux1_sel_t;
 
 typedef enum bit [3:0] {
