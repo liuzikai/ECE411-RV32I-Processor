@@ -71,12 +71,13 @@ set_global_assignment -name EDA_TEST_BENCH_FILE hvl/source_tb.sv -section_id mp4
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/tb_itf.sv -section_id mp4_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/top.sv -section_id mp4_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE hvl/cache_unit_test.sv -section_id cache_unit_test
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/given_cache/line_adapter.sv
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/given_cache/data_array.sv
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/given_cache/cache_datapath.sv
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/given_cache/cache_control.sv
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/given_cache/cache.sv
-set_global_assignment -name SYSTEMVERILOG_FILE hdl/given_cache/array.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/comb_data_array.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/comb_array.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/cache_itf.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/cache_datapath.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/cache_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/cache.sv
+set_global_assignment -name SYSTEMVERILOG_FILE hdl/cache/bus_adapter.sv
 set_global_assignment -name SDC_FILE mp4.out.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/arbiter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE hdl/cpu/control.sv
