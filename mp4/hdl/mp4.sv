@@ -55,38 +55,38 @@ cpu cpu(
 
 cache i_cache(
     .clk(clk),
-    .rst(rst),
-    .mem_addr(i_addr),
-    .mem_wdata(32'bX),
-    .mem_rdata(i_rdata),
-    .mem_byte_enable(4'b1111),
+    // .rst(rst),
+    .mem_address(i_addr),
+    .mem_wdata_cpu(32'bX),
+    .mem_rdata_cpu(i_rdata),
+    .mem_byte_enable_cpu(4'b1111),
     .mem_read(i_read),
     .mem_write(1'b0),
     .mem_resp(i_resp),
-    .ca_wdata(),
-    .ca_rdata(i_a_rdata),
-    .ca_addr(i_a_addr),
-    .ca_resp(i_a_resp),
-    .ca_read(i_a_read),
-    .ca_write()
+    .pmem_wdata(),
+    .pmem_rdata(i_a_rdata),
+    .pmem_address(i_a_addr),
+    .pmem_resp(i_a_resp),
+    .pmem_read(i_a_read),
+    .pmem_write()
 );
 
 cache d_cache(
     .clk(clk),
-    .rst(rst),
-    .mem_addr(d_addr),
-    .mem_wdata(d_wdata),
-    .mem_rdata(d_rdata),
-    .mem_byte_enable(d_byte_enable),
+    // .rst(rst),
+    .mem_address(d_addr),
+    .mem_wdata_cpu(d_wdata),
+    .mem_rdata_cpu(d_rdata),
+    .mem_byte_enable_cpu(d_byte_enable),
     .mem_read(d_read),
     .mem_write(d_write),
     .mem_resp(d_resp),
-    .ca_wdata(d_a_wdata),
-    .ca_rdata(d_a_rdata),
-    .ca_addr(d_a_addr),
-    .ca_resp(d_a_resp),
-    .ca_read(d_a_read),
-    .ca_write(d_a_write)
+    .pmem_wdata(d_a_wdata),
+    .pmem_rdata(d_a_rdata),
+    .pmem_address(d_a_addr),
+    .pmem_resp(d_a_resp),
+    .pmem_read(d_a_read),
+    .pmem_write(d_a_write)
 );
 
 arbiter arbiter(
