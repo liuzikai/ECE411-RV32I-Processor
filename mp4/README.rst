@@ -159,7 +159,7 @@ Listing 1: Example control word definition (define in ``rv32i_types.sv``)
   typedef struct packed {
       rv32i_opcode opcode;
       alu_ops aluop;
-      logic regfilemux_sel;
+      logic wbdatamux_sel;
       logic load_regfile;
       /* ... other signals ... */
   } rv32i_control_word;

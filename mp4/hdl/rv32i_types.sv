@@ -1,11 +1,11 @@
 package rv32i_types;
 // Mux types are in their own packages to prevent identiier collisions
-// e.g. pcmux::pc_plus4 and regfilemux::pc_plus4 are seperate identifiers
+// e.g. pcmux::pc_plus4 and wbdatamux::pc_plus4 are seperate identifiers
 // for seperate enumerated types
 import pcmux::*;
 import cmpmux::*;
 import alumux::*;
-import regfilemux::*;
+import wbdatamux::*;
 
 typedef logic [31:0] rv32i_word;
 typedef logic [4:0] rv32i_reg;
@@ -83,7 +83,7 @@ typedef struct packed {
     // MUX and function selections
     alumux::alumux1_sel_t alumux1_sel;
     alumux::alumux2_sel_t alumux2_sel;
-    regfilemux::regfilemux_sel_t regfilemux_sel;
+    wbdatamux::wbdatamux_sel_t wbdatamux_sel;
     cmpmux::cmpmux1_sel_t cmpmux1_sel;
     cmpmux::cmpmux2_sel_t cmpmux2_sel;
     mwdrmux::mwdrmux_sel_t mwdrmux_sel;

@@ -43,16 +43,16 @@ branch_funct3_t cmpop;
 pcmux::pcmux_sel_t pcmux_sel;
 
 // d_read, d_write, d_byte_enable directly linked to output
-regfilemux::regfilemux_sel_t regfilemux_sel;
+wbdatamux::wbdatamux_sel_t wbdatamux_sel;
 
 logic regfile_wb;
 rv32i_reg regfile_rd;
 logic br_en;
 
-logic stall_ID;
-logic stall_EX;
-logic stall_MEM;
-logic stall_WB;
+logic stall_id;
+logic stall_ex;
+logic stall_mem;
+logic stall_wb;
 
 // ================================ Modules ================================
 
@@ -91,7 +91,7 @@ rv32i_word rvfi_d_addr;
 register d_addr_imm1(
     .clk(clk),
     .rst(rst),
-    .load(~stall_WB),
+    .load(~stall_wb),
     .in(d_addr),  // use aligned value
     .out(rvfi_d_addr)
 );
@@ -101,7 +101,7 @@ rv32i_word rvfi_d_rdata;
 register d_rdata_imm1(
     .clk(clk),
     .rst(rst),
-    .load(~stall_WB),
+    .load(~stall_wb),
     .in(d_rdata),  // use aligned value
     .out(rvfi_d_rdata)
 );
@@ -111,7 +111,7 @@ rv32i_word rvfi_d_wdata;
 register d_wdata_imm1(
     .clk(clk),
     .rst(rst),
-    .load(~stall_WB),
+    .load(~stall_wb),
     .in(d_wdata),  // use aligned value
     .out(rvfi_d_wdata)
 );
@@ -121,7 +121,7 @@ logic [3:0] rvfi_d_rmask;
 register #(4) d_rmask_imm1(
     .clk(clk),
     .rst(rst),
-    .load(~stall_WB),
+    .load(~stall_wb),
     .in(d_read ? 4'b1111 : 4'b0),  // use aligned value
     .out(rvfi_d_rmask)
 );
@@ -131,7 +131,7 @@ logic [3:0] rvfi_d_wmask;
 register #(4) d_wmask_imm1(
     .clk(clk),
     .rst(rst),
-    .load(~stall_WB),
+    .load(~stall_wb),
     .in(d_write ? d_byte_enable : 4'b0),  // use aligned value
     .out(rvfi_d_wmask)
 );

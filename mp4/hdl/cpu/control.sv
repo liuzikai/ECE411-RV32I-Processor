@@ -29,7 +29,7 @@ module control
     output logic d_read,
     output logic d_write,
     output logic [3:0] d_byte_enable,
-    output regfilemux::regfilemux_sel_t regfilemux_sel,
+    output wbdatamux::wbdatamux_sel_t wbdatamux_sel,
 
     // MEM-WB
     output logic regfile_wb,
@@ -39,10 +39,10 @@ module control
     input logic i_resp,
     input logic d_resp,
 
-    output logic stall_ID,
-    output logic stall_EX,
-    output logic stall_MEM,
-    output logic stall_WB
+    output logic stall_id,
+    output logic stall_ex,
+    output logic stall_mem,
+    output logic stall_wb
 );
 
 rv32i_control_word new_control_word, IF_ID, ID_EX, EX_MEM, MEM_WB;  // control word register
@@ -54,10 +54,10 @@ logic [3:0] flush_list;
 logic stall_all, stall_decode;
 logic d_ready, d_ready_next;
 
-assign stall_ID = stall_all || stall_decode;
-assign stall_EX = stall_all;
-assign stall_MEM = stall_all;
-assign stall_WB = stall_all;
+assign stall_id = stall_all || stall_decode;
+assign stall_ex = stall_all;
+assign stall_mem = stall_all;
+assign stall_wb = stall_all;
 assign stall_all = (!i_resp) || (!d_ready_next);
 
 function void set_defaults();
@@ -77,7 +77,7 @@ function void set_defaults();
     d_read = EX_MEM.d_read;
     d_write = EX_MEM.d_write;
     d_byte_enable = EX_MEM.d_byte_enable;
-    regfilemux_sel = EX_MEM.regfilemux_sel;
+    wbdatamux_sel = EX_MEM.wbdatamux_sel;
 
     // MEM-WB
     regfile_wb = MEM_WB.regfile_wb;
@@ -105,7 +105,7 @@ always_comb begin : FLUSH_ASSIGN
     FLUSH.opcode = op_none;
     FLUSH.alumux1_sel = alumux::alumux1_sel_t'(1'b0);
     FLUSH.alumux2_sel = alumux::alumux2_sel_t'(3'b000);
-    FLUSH.regfilemux_sel = regfilemux::regfilemux_sel_t'(4'b0000);
+    FLUSH.wbdatamux_sel = wbdatamux::wbdatamux_sel_t'(4'b0000);
     FLUSH.cmpmux1_sel = cmpmux::cmpmux1_sel_t'(2'b00);
     FLUSH.cmpmux2_sel = cmpmux::cmpmux2_sel_t'(3'b000);
     FLUSH.mwdrmux_sel = mwdrmux::mwdrmux_sel_t'(2'b00);
@@ -145,16 +145,16 @@ always_comb begin : MAIN_COMB
         end
         else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs1) begin
             if (IF_ID.use_cmp == 1'b1) begin
-                cmpmux1_sel = cmpmux::cmpmux1_regfilemux_out;
+                cmpmux1_sel = cmpmux::cmpmux1_wbdatamux_out;
             end else begin
-                alumux1_sel = alumux::alumux1_regfilemux_out;
+                alumux1_sel = alumux::alumux1_wbdatamux_out;
             end
         end
         else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs1) begin
             if (IF_ID.use_cmp == 1'b1) begin
-                cmpmux1_sel = cmpmux::cmpmux1_regfile_imm_out;
+                cmpmux1_sel = cmpmux::cmpmux1_wbdata_out;
             end else begin
-                alumux1_sel = alumux::alumux1_regfile_imm_out;
+                alumux1_sel = alumux::alumux1_wbdata_out;
             end
         end
     end
@@ -173,19 +173,19 @@ always_comb begin : MAIN_COMB
             end
         end else if (EX_MEM.regfile_wb && EX_MEM_reg.rd == IF_ID_reg.rs2) begin
             if (IF_ID.use_cmp == 1'b1) begin
-                cmpmux2_sel = cmpmux::cmpmux2_regfilemux_out;
+                cmpmux2_sel = cmpmux::cmpmux2_wbdatamux_out;
             end else if (IF_ID.opcode == op_store) begin
-                mwdrmux_sel = mwdrmux::mwdrmux_regfilemux_out;
+                mwdrmux_sel = mwdrmux::mwdrmux_wbdatamux_out;
             end else begin
-                alumux2_sel = alumux::alumux2_regfilemux_out;
+                alumux2_sel = alumux::alumux2_wbdatamux_out;
             end
         end else if (MEM_WB.regfile_wb && MEM_WB_reg.rd == IF_ID_reg.rs2) begin
             if (IF_ID.use_cmp == 1'b1) begin
-                cmpmux2_sel = cmpmux::cmpmux2_regfile_imm_out;
+                cmpmux2_sel = cmpmux::cmpmux2_wbdata_out;
             end else if (IF_ID.opcode == op_store) begin
-                mwdrmux_sel = mwdrmux::mwdrmux_regfile_imm_out;
+                mwdrmux_sel = mwdrmux::mwdrmux_wbdata_out;
             end else begin
-                alumux2_sel = alumux::alumux2_regfile_imm_out;
+                alumux2_sel = alumux::alumux2_wbdata_out;
             end
         end
     end
