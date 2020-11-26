@@ -77,7 +77,7 @@ generate
             .rvfi_rs1_rdata(rvfi.rs1_addr ? rvfi.rs1_rdata : 32'b0),
             .rvfi_rs2_rdata(rvfi.rs2_addr ? rvfi.rs2_rdata : 32'b0),
             .rvfi_rd_addr(rvfi.load_regfile ? rvfi.rd_addr : 5'b0),
-            .rvfi_rd_wdata(rvfi.load_regfile ? rvfi.rd_wdata : 5'b0),
+            .rvfi_rd_wdata(rvfi.load_regfile ? rvfi.rd_wdata : 32'b0),
             .rvfi_pc_rdata(rvfi.pc_rdata),
             .rvfi_pc_wdata(rvfi.pc_wdata),
             .rvfi_mem_addr({rvfi.mem_addr[31:2], 2'b0}),

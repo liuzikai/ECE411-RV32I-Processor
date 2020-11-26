@@ -12,18 +12,18 @@ typedef logic [4:0] rv32i_reg;
 typedef logic [3:0] rv32i_mem_wmask;
 
 typedef enum bit [6:0] {
-    op_lui   = 7'b0110111, //load upper immediate (U type)
-    op_auipc = 7'b0010111, //add upper immediate PC (U type)
-    op_jal   = 7'b1101111, //jump and link (J type)
-    op_jalr  = 7'b1100111, //jump and link register (I type)
-    op_br    = 7'b1100011, //branch (B type)
-    op_load  = 7'b0000011, //load (I type)
-    op_store = 7'b0100011, //store (S type)
-    op_imm   = 7'b0010011, //arith ops with register/immediate operands (I type)
-    op_reg   = 7'b0110011, //arith ops with register operands (R type)
-    op_csr   = 7'b1110011, //control and status register (I type)
+    op_lui   = 7'b0110111,  // load upper immediate (U type)
+    op_auipc = 7'b0010111,  // add upper immediate PC (U type)
+    op_jal   = 7'b1101111,  // jump and link (J type)
+    op_jalr  = 7'b1100111,  // jump and link register (I type)
+    op_br    = 7'b1100011,  // branch (B type)
+    op_load  = 7'b0000011,  // load (I type)
+    op_store = 7'b0100011,  // store (S type)
+    op_imm   = 7'b0010011,  // arith ops with register/immediate operands (I type)
+    op_reg   = 7'b0110011,  // arith ops with register operands (R type)
+    op_csr   = 7'b1110011,  // control and status register (I type)
     op_none  = 7'b0000000
-} rv32i_opcode;
+} rv32i_opcode;å
 
 typedef enum bit [2:0] {
     beq  = 3'b000,
@@ -49,12 +49,12 @@ typedef enum bit [2:0] {
 } store_funct3_t;
 
 typedef enum bit [2:0] {
-    add  = 3'b000, //check bit30 for sub if op_reg opcode
+    add  = 3'b000,  // check bit30 for sub if op_reg opcode
     sll  = 3'b001,
     slt  = 3'b010,
     sltu = 3'b011,
     axor = 3'b100,
-    sr   = 3'b101, //check bit30 for logical/arithmetic
+    sr   = 3'b101,  // check bit30 for logical/arithmetic
     aor  = 3'b110,
     aand = 3'b111
 } arith_funct3_t;

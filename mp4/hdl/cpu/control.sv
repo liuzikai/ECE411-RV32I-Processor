@@ -11,9 +11,9 @@ module control
     input rv32i_word instruction,
 
     // ID
-    output cmpmux::cmpmux2_sel_t cmpmux2_sel,
     output alumux::alumux1_sel_t alumux1_sel,
     output alumux::alumux2_sel_t alumux2_sel,
+    output cmpmux::cmpmux2_sel_t cmpmux2_sel,
     output rsmux::rsmux_sel_t rs1mux_sel,
     output rsmux::rsmux_sel_t rs2mux_sel,
 
@@ -24,10 +24,10 @@ module control
     input  logic ex_load_pc,
 
     // MEM
+    output wbdatamux::wbdatamux_sel_t wbdatamux_sel,
     output logic d_read,
     output logic d_write,
     output logic [3:0] d_byte_enable,
-    output wbdatamux::wbdatamux_sel_t wbdatamux_sel,
 
     // WB
     output rv32i_reg regfile_rd,

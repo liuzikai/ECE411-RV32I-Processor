@@ -30,23 +30,21 @@ logic [3:0] raw_d_byte_enable;
 
 // Instruction channel must be aligned
 
-// control -> datapath
-cmpmux::cmpmux2_sel_t cmpmux2_sel;
+// control <-> datapath
 alumux::alumux1_sel_t alumux1_sel;
 alumux::alumux2_sel_t alumux2_sel;
+cmpmux::cmpmux2_sel_t cmpmux2_sel;
 rsmux::rsmux_sel_t rs1mux_sel;
-rsmux::rsmux_sel_t rs2mux_sel,
+rsmux::rsmux_sel_t rs2mux_sel;
 
 alu_ops aluop;
 branch_funct3_t cmpop;
-pcmux::pcmux_sel_t pcmux_sel;
+expcmux::expcmux_sel_t expcmux_sel,
+logic ex_load_pc;
 
-// d_read, d_write, d_byte_enable directly linked to output
 wbdatamux::wbdatamux_sel_t wbdatamux_sel;
 
-logic regfile_wb;
 rv32i_reg regfile_rd;
-logic br_en;
 
 logic stall_id;
 logic stall_ex;
@@ -82,57 +80,5 @@ mem_align d_align(
 );
 
 assign i_read = 1'b1;
-
-// ================================ Signals and Intermediate Registers for RVFI ================================
-
-// rvfi_d_addr
-rv32i_word rvfi_d_addr;
-register d_addr_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_wb),
-    .in(d_addr),  // use aligned value
-    .out(rvfi_d_addr)
-);
-
-// rvfi_d_rdata
-rv32i_word rvfi_d_rdata;
-register d_rdata_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_wb),
-    .in(d_rdata),  // use aligned value
-    .out(rvfi_d_rdata)
-);
-
-// rvfi_d_wdata
-rv32i_word rvfi_d_wdata;
-register d_wdata_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_wb),
-    .in(d_wdata),  // use aligned value
-    .out(rvfi_d_wdata)
-);
-
-// rvfi_d_rmask
-logic [3:0] rvfi_d_rmask;
-register #(4) d_rmask_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_wb),
-    .in(d_read ? 4'b1111 : 4'b0),  // use aligned value
-    .out(rvfi_d_rmask)
-);
-
-// rvfi_d_wmask
-logic [3:0] rvfi_d_wmask;
-register #(4) d_wmask_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_wb),
-    .in(d_write ? d_byte_enable : 4'b0),  // use aligned value
-    .out(rvfi_d_wmask)
-);
 
 endmodule : cpu
