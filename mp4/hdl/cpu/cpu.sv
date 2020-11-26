@@ -30,13 +30,12 @@ logic [3:0] raw_d_byte_enable;
 
 // Instruction channel must be aligned
 
-// control_words -> datapath
-
-cmpmux::cmpmux1_sel_t cmpmux1_sel;
+// control -> datapath
 cmpmux::cmpmux2_sel_t cmpmux2_sel;
 alumux::alumux1_sel_t alumux1_sel;
 alumux::alumux2_sel_t alumux2_sel;
-mwdrmux::mwdrmux_sel_t mwdrmux_sel;
+rsmux::rsmux_sel_t rs1mux_sel;
+rsmux::rsmux_sel_t rs2mux_sel,
 
 alu_ops aluop;
 branch_funct3_t cmpop;

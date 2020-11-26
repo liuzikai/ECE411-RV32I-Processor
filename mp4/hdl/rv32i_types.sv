@@ -74,43 +74,31 @@ typedef enum bit [2:0] {
 
 typedef struct packed {
 
-    // ================ Common ================
-
+    // Common
     rv32i_opcode opcode;
 
-    // ================ Datapath ================
-
-    // MUX and function selections
+    // ID
     alumux::alumux1_sel_t alumux1_sel;
     alumux::alumux2_sel_t alumux2_sel;
-    wbdatamux::wbdatamux_sel_t wbdatamux_sel;
-    cmpmux::cmpmux1_sel_t cmpmux1_sel;
     cmpmux::cmpmux2_sel_t cmpmux2_sel;
-    mwdrmux::mwdrmux_sel_t mwdrmux_sel;
-    logic use_cmp;
-    logic use_cmp_output;
+    rv32i_reg rs1;  // 0 for not using rs1
+    rv32i_reg rs2;  // 0 for not using rs2
+
+    // EX
     alu_ops aluop;
     branch_funct3_t cmpop;
-
     // For BR/JAL/JALR instruction in EX stage
-    pcmux::pcmux_sel_t pcmux_sel;
+    expcmux::expcmux_sel_t expcmux_sel;
 
-    // MEM stage control signals
+    // MEM
     logic d_read;
     logic d_write;
     logic [3:0] d_byte_enable;
+    wbdatamux::wbdatamux_sel_t wbdatamux_sel;
 
-    // WB stage control signals
-    logic regfile_wb;
-    logic rs1_read;
-    logic rs2_read;
+    // WB
+    rv32i_reg rd;  // 0 for not writing back
 
 } rv32i_control_word;
-
-typedef struct packed {
-    rv32i_reg rs1;
-    rv32i_reg rs2;
-    rv32i_reg rd;
-} rv32i_reg_pack;
 
 endpackage : rv32i_types
