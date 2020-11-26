@@ -16,7 +16,9 @@ module datapath(
     input cmpmux::cmpmux2_sel_t cmpmux2_sel,
     input rsmux::rsmux_sel_t rs1mux_sel,
     input rsmux::rsmux_sel_t rs2mux_sel,
-    // rs1 and rs2 comes from IR as "raw" values
+    // rs1 and rs2 must come control word, otherwise it will be checked but no forwarding is applied
+    input rv32i_reg regfile_rs1,
+    input rv32i_reg regfile_rs2,
 
 
     // EX
@@ -33,7 +35,7 @@ module datapath(
     // Signals to D-Cache
     output rv32i_word d_addr,
     input  rv32i_word d_rdata,
-    output rv32i_word d_wdata
+    output rv32i_word d_wdata,
     
 
     // WB
@@ -58,13 +60,14 @@ logic [6:0] funct7;
 rv32i_reg rd_out;
 
 // Output of regfile
-rv32i_word regfile_rs1_out, regfile_rs1_out;
+rv32i_word regfile_rs1_out, regfile_rs2_out;
 
 // Output of alu
 rv32i_word alu_out;
 
-// Output of cmp in 32 bits
-rv32i_word cmp_out;
+// Output of cmp
+logic br_en;
+rv32i_word cmp_out;  // in 32 bits
 
 // Output of pc and chained intermediate registers
 rv32i_word pc_out, pc_id_out, pc_ex_out, pc_mem_out;
@@ -72,7 +75,7 @@ rv32i_word pc_out, pc_id_out, pc_ex_out, pc_mem_out;
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out, mwdr_ex_out;
 rv32i_word u_imm_ex_out, u_imm_mem_out, cmp_wb_imm_out, cmpmux2_out;
-rv32i_word alumux1_out, alumux2_out, wbdatamux_out, marmux_out, pc_in;
+rv32i_word alumux1_out, alumux2_out, wbdatamux_out, pc_in;
 
 // Data after forwarding
 rv32i_word rs1_actual, rs2_actual;
@@ -97,8 +100,8 @@ ir ir(
     .b_imm(b_imm),
     .s_imm(s_imm),
     .j_imm(j_imm),
-    .rs1(rs1),   // to regfile
-    .rs2(rs2),   // to regfile
+    .rs1(rs1),
+    .rs2(rs2),
     .rd(rd_out)
 );
 
@@ -237,9 +240,9 @@ regfile regfile(
     .rst(rst),
     .load(~stall_wb),  // always load, use regfile_rd to decide whether to write
     .in(regfile_in),
-    .src_a(rs1),        // directly from IR
-    .src_b(rs2),        // directly from IR
-    .dest(regfile_rd),  // from control word
+    .src_a(regfile_rs1),  // from control word
+    .src_b(regfile_rs2),  // from control word
+    .dest(regfile_rd),    // from control word
     .reg_a(regfile_rs1_out),
     .reg_b(regfile_rs2_out)
 );
@@ -260,8 +263,7 @@ cmp cmp(
 
 // ================================ MUXes ================================
 
-always_comb begin : MUXES
-
+always_comb begin
     // expcmux
     unique case ({expcmux_sel, br_en})
         3'b100, 3'b101: begin  // expcmux::alu_out, regardless of br_en
@@ -285,7 +287,9 @@ always_comb begin : MUXES
             ex_load_pc = 1'b0;
         end
     endcase
+end
 
+always_comb begin
     //rs1mux
     unique case (rs1mux_sel)
         rsmux::regfile_out:    rs1_actual = regfile_rs1_out;
@@ -296,7 +300,9 @@ always_comb begin : MUXES
         rsmux::wbdatamux_out:  rs1_actual = wbdatamux_out;
         rsmux::wbdata_out:     rs1_actual = regfile_in;
     endcase
+end
 
+always_comb begin
     //rs2mux
     unique case (rs2mux_sel)
         rsmux::regfile_out:    rs2_actual = regfile_rs2_out;
@@ -307,7 +313,9 @@ always_comb begin : MUXES
         rsmux::wbdatamux_out:  rs2_actual = wbdatamux_out;
         rsmux::wbdata_out:     rs2_actual = regfile_in;
     endcase
+end
 
+always_comb begin
     // wbdatamux
     unique case (wbdatamux_sel)
         wbdatamux::alu_out:   wbdatamux_out = alu_wb_imm_out;
@@ -321,14 +329,18 @@ always_comb begin : MUXES
         wbdatamux::lhu:       wbdatamux_out = {16'b0, d_rdata[15:0]};
         default: `BAD_MUX_SEL;
     endcase
+end
 
+always_comb begin
     // alumux1
     unique case (alumux1_sel)
         alumux::rs1_out:  alumux1_out = rs1_actual;
         alumux::pc_out:   alumux1_out = pc_id_out;
         default: `BAD_MUX_SEL;
     endcase
+end
 
+always_comb begin
     // alumux2
     unique case (alumux2_sel)
         alumux::i_imm:    alumux2_out = i_imm;
@@ -339,7 +351,9 @@ always_comb begin : MUXES
         alumux::rs2_out:  alumux2_out = rs2_actual;
         default: `BAD_MUX_SEL;
     endcase
+end
 
+always_comb begin
     unique case (cmpmux2_sel)
         cmpmux::rs2_out:  cmpmux2_out = rs2_actual;
         cmpmux::i_imm:    cmpmux2_out = i_imm;
@@ -347,48 +361,5 @@ always_comb begin : MUXES
     endcase
 
 end
-
-
-// ================================ Signals and Intermediate Registers for RVFI ================================
-
-// rvfi_pc_wdata
-rv32i_word pc_wdata_imm1_out, pc_wdata_imm2_out, pc_wdata_imm3_in, pc_wdata_imm3_out, rvfi_pc_wdata;
-register pc_wdata_imm1(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_id),
-    .in(pc_out + 4),
-    .out(pc_wdata_imm1_out)
-);
-register pc_wdata_imm2(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_ex),
-    .in(pc_wdata_imm1_out),
-    .out(pc_wdata_imm2_out)
-);
-
-always_comb begin
-    unique case (pcmux_sel)
-        pcmux::pc_plus4: pc_wdata_imm3_in = pc_wdata_imm2_out;
-        pcmux::br:       pc_wdata_imm3_in = (br_en ? pc_in : pc_wdata_imm2_out);
-        default:         pc_wdata_imm3_in = pc_in;
-    endcase
-end
-
-register pc_wdata_imm3(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_ex),
-    .in(pc_wdata_imm3_in),
-    .out(pc_wdata_imm3_out)
-);
-register pc_wdata_imm4(
-    .clk(clk),
-    .rst(rst),
-    .load(~stall_ex),
-    .in(pc_wdata_imm3_out),
-    .out(rvfi_pc_wdata)
-);
 
 endmodule : datapath

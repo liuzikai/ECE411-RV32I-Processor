@@ -7,6 +7,7 @@ typedef enum bit [1:0] {
 } expcmux_sel_t;
 endpackage
 
+package cmpmux;
 typedef enum bit {
     rs2_out = 1'b0
     ,i_imm  = 1'b1

@@ -16,11 +16,13 @@ module control
     output cmpmux::cmpmux2_sel_t cmpmux2_sel,
     output rsmux::rsmux_sel_t rs1mux_sel,
     output rsmux::rsmux_sel_t rs2mux_sel,
+    output rv32i_reg regfile_rs1,
+    output rv32i_reg regfile_rs2,
 
     // EX
     output alu_ops aluop,
     output branch_funct3_t cmpop,
-    output pcmux::pcmux_sel_t pcmux_sel,
+    output expcmux::expcmux_sel_t expcmux_sel,
     input  logic ex_load_pc,
 
     // MEM
@@ -64,11 +66,13 @@ function void set_defaults();
     cmpmux2_sel = if_id.cmpmux2_sel;
     rs1mux_sel = rsmux::regfile_out;
     rs2mux_sel = rsmux::regfile_out;
+    regfile_rs1 = if_id.rs1;
+    regfile_rs2 = if_id.rs2;
 
     // EX
     aluop = id_ex.aluop;
     cmpop = id_ex.cmpop;
-    pcmux_sel = id_ex.pcmux_sel;
+    expcmux_sel = id_ex.expcmux_sel;
 
     // MEM
     d_read = ex_mem.d_read;
@@ -79,7 +83,7 @@ function void set_defaults();
     // WB
     regfile_rd = mem_wb.rd;
 
-    // Internal Register
+    // Internal
     stall_decode = 1'b0;
     flush_list = 4'b0000;
 endfunction
@@ -102,7 +106,7 @@ always_comb begin : FLUSH_ASSIGN
     FLUSH.wbdatamux_sel = wbdatamux::wbdatamux_sel_t'(4'b0000);
     FLUSH.aluop = alu_ops'(3'b000);
     FLUSH.cmpop = branch_funct3_t'(3'b000);
-    FLUSH.pcmux_sel = pcmux::pc_plus4;
+    FLUSH.expcmux_sel = expcmux::none;
     FLUSH.d_read = 1'b0;
     FLUSH.d_write = 1'b0;
     FLUSH.d_byte_enable = 4'b0000;
@@ -115,6 +119,7 @@ always_comb begin : MAIN_COMB
     set_defaults();
 
     // Handle branch mispredict
+    // It's static not-taking predictor now, so when ever EX wants to load PC, it's considered as an mispredict
     if (ex_load_pc) begin
         flush_list[1:0] = 2'b11;  // flush the if_id and id_ex control words
     end
@@ -134,22 +139,22 @@ always_comb begin : MAIN_COMB
                 flush_list[1] = 1'b1;  // insert bubble to the id_ex
 
                 // At next cycle, the 2-stage forwarding (below) will match
-            end else 
+            end else begin
                 // Is not load function
 
                 // See wbdatamux_sel_t encoding
-                rs1mux_sel = rsmux_sel_t'(id_ex.wbdatamux_sel[2:0]);
+                rs1mux_sel = rsmux::rsmux_sel_t'(id_ex.wbdatamux_sel[2:0]);
             end
 
         end else if (ex_mem.rd == if_id.rs1) begin
             // 2-stage forwarding
 
-            rs1mux_sel = wbdatamux_out;  // wbdatamux_sel already applied
+            rs1mux_sel = rsmux::wbdatamux_out;  // wbdatamux_sel already applied
 
         end else if (mem_wb.rd == if_id.rs1) begin
             // 3-stage forwarding
 
-            rs1mux_sel = wbdata_out;  // wbdatamux_sel already applied
+            rs1mux_sel = rsmux::wbdata_out;  // wbdatamux_sel already applied
         end
     end
 
@@ -168,22 +173,22 @@ always_comb begin : MAIN_COMB
                 flush_list[1] = 1'b1;  // insert bubble to the id_ex
 
                 // At next cycle, the 2-stage forwarding (below) will match
-            end else 
+            end else begin
                 // Is not load function
 
                 // See wbdatamux_sel_t encoding
-                rs2mux_sel = rsmux_sel_t'(id_ex.wbdatamux_sel[2:0]);
+                rs2mux_sel = rsmux::rsmux_sel_t'(id_ex.wbdatamux_sel[2:0]);
             end
 
         end else if (ex_mem.rd == if_id.rs2) begin
             // 2-stage forwarding
 
-            rs2mux_sel = wbdatamux_out;  // wbdatamux_sel already applied
+            rs2mux_sel = rsmux::wbdatamux_out;  // wbdatamux_sel already applied
 
         end else if (mem_wb.rd == if_id.rs2) begin
             // 3-stage forwarding
 
-            rs2mux_sel = wbdata_out;  // wbdatamux_sel already applied
+            rs2mux_sel = rsmux::wbdata_out;  // wbdatamux_sel already applied
         end
     end
 

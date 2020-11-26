@@ -61,7 +61,7 @@ always_ff @(posedge itf.clk) begin : SAMPLING
 end
 
 assign rvfi.commit = (dut.cpu.control.mem_wb.opcode != rv32i_types::op_none) && ~dut.cpu.stall_wb; // Set high when a valid instruction is modifying regfile or PC
-assign rvfi.halt = (rvfi.commit && dut.cpu.datapath.rvfi_insn === 32'h00000063);   // Set high when you detect an infinite loop
+assign rvfi.halt = (rvfi.commit && insn_wb === 32'h00000063);   // Set high when you detect an infinite loop
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 
@@ -87,7 +87,7 @@ assign rvfi.mem_addr = d_addr_wb;
 assign rvfi.mem_rmask = d_rmask_wb;
 assign rvfi.mem_wmask = d_wmask_wb;
 assign rvfi.mem_rdata = d_rdata_wb;
-assign rvfi.mem_wdata = dut.cpu.rvfi_d_wdata;
+assign rvfi.mem_wdata = d_wdata_wb;
 
 /**************************** End RVFIMON signals ****************************/
 

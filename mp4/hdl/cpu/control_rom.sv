@@ -57,12 +57,12 @@ function automatic void set_cmp(cmpmux::cmpmux2_sel_t sel, branch_funct3_t op);
     ctrl.cmpop = op;
 endfunction
 
-function void load_pc_at_ex(pcmux::pcmux_sel_t sel);
-    ctrl.pcmux_sel = sel;
+function void load_pc_at_ex(expcmux::expcmux_sel_t sel);
+    ctrl.expcmux_sel = sel;
 endfunction
 
 function void load_regfile(wbdatamux::wbdatamux_sel_t sel);
-    ctrl.regfile_rd = rd;
+    ctrl.rd = rd;
     ctrl.wbdatamux_sel = sel;
 endfunction
 
@@ -78,25 +78,24 @@ always_comb begin
             load_regfile(wbdatamux::alu_out);
         end
         op_lui: begin  // load upper immediate (U type)
-            set_alu(alumux::zero, alumux::u_imm, alu_add);
             load_regfile(wbdatamux::u_imm);
         end
         op_jal: begin  // jump and link (J type)
             set_alu(alumux::pc_out, alumux::j_imm, alu_add); 
-            load_pc_at_ex(pcmux::alu_out);
+            load_pc_at_ex(expcmux::alu_out);
             load_regfile(wbdatamux::pc_plus4);
         end
         op_jalr: begin  // jump and link register (I type)
             set_alu(alumux::rs1_out, alumux::i_imm, alu_add); 
-            load_pc_at_ex(pcmux::alu_mod2);
+            load_pc_at_ex(expcmux::alu_mod2);
             load_regfile(wbdatamux::pc_plus4);
-            ctrl.rs1_read = rs1;
+            ctrl.rs1 = rs1;
         end
         op_br: begin  // branch (B type)
             set_alu(alumux::pc_out, alumux::b_imm, alu_add);
-            load_pc_at_ex(pcmux::br);
-            ctrl.rs1_read = rs1;
-            ctrl.rs2_read = rs2;
+            load_pc_at_ex(expcmux::br);
+            ctrl.rs1 = rs1;
+            ctrl.rs2 = rs2;
         end
         op_load: begin  // load (I type)
             set_alu(alumux::rs1_out, alumux::i_imm, alu_add); 
@@ -116,7 +115,7 @@ always_comb begin
                 lw:       ctrl.d_byte_enable = 4'b1111;
                 default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
-            ctrl.rs1_read = rs1;
+            ctrl.rs1 = rs1;
         end
         op_store: begin  // store (S type)
             set_alu(alumux::rs1_out, alumux::s_imm, alu_add);
@@ -127,8 +126,8 @@ always_comb begin
                 sw : ctrl.d_byte_enable = 4'b1111;
                 default: $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
             endcase
-            ctrl.rs1_read = rs1;
-            ctrl.rs2_read = rs2;
+            ctrl.rs1 = rs1;
+            ctrl.rs2 = rs2;
         end
         op_imm: begin  // arith ops with register/immediate operands (I type)
             // TODO: these nested muxes may be too long
@@ -155,7 +154,7 @@ always_comb begin
                     load_regfile(wbdatamux::alu_out);
                 end
             endcase
-            ctrl.rs1_read = rs1;
+            ctrl.rs1 = rs1;
         end
         op_reg: begin  // arith ops with register operands (R type)
             // TODO: these nested muxes may be too long
@@ -191,8 +190,8 @@ always_comb begin
                     load_regfile(wbdatamux::alu_out);
                 end
             endcase
-            ctrl.rs1_read = rs1;
-            ctrl.rs2_read = rs2;
+            ctrl.rs1 = rs1;
+            ctrl.rs2 = rs2;
         end
         default: ;  // use default control word
     endcase

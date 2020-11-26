@@ -36,10 +36,12 @@ alumux::alumux2_sel_t alumux2_sel;
 cmpmux::cmpmux2_sel_t cmpmux2_sel;
 rsmux::rsmux_sel_t rs1mux_sel;
 rsmux::rsmux_sel_t rs2mux_sel;
+rv32i_reg regfile_rs1;
+rv32i_reg regfile_rs2;
 
 alu_ops aluop;
 branch_funct3_t cmpop;
-expcmux::expcmux_sel_t expcmux_sel,
+expcmux::expcmux_sel_t expcmux_sel;
 logic ex_load_pc;
 
 wbdatamux::wbdatamux_sel_t wbdatamux_sel;
