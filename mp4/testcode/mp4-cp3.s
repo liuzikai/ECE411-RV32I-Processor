@@ -319,7 +319,7 @@ GetOverHere:
 END_m:
     jalr x0, x1, 0
 
-
+.balign 256
 ZERO:   .word 0x00000000
 ZOOP :  .word 0x0000700F
 BEAD :  .word 0xBEADBEAD
@@ -356,6 +356,7 @@ DONE:   .word RESULT
 MUDPIE: .word 0x00000000
 BLUNDER:    .word Beg1
 
+.balign 256
 MUDDLE:
     nop
     nop
@@ -529,6 +530,7 @@ GetHere:
 
     beq x0, x0, MoneyMoney
 
+.balign 256
 BlackHole:  .word 0
 WormHole:   .word 0
 LdThis:     .word 0xabdaabda
@@ -546,6 +548,7 @@ acorn:      .word 0x00000FEE
 quark:      .word 0x0000276C
 payout:     .word MoneyMoney
 
+.balign 256
 MoneyMoney:
 
     andi x7, x7, 0
@@ -820,7 +823,7 @@ LoopRowsD:
 
 
 .section .rodata
-
+.balign 256
 XX1:             .word    0x00000000
 Y1:             .word    0x00000000
 X2:             .word    0x00000000
