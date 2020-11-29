@@ -112,7 +112,7 @@ assign itf.data_rdata = dut.d_rdata;
 /*********************** End Shadow Memory Assignments ***********************/
 
 // Set this to the proper value
-assign itf.registers = '{default: '0};
+assign itf.registers = dut.cpu.datapath.regfile.data;
 
 /*********************** Instantiate your design here ************************/
 
