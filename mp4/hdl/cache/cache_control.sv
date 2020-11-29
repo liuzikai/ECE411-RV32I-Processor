@@ -2,11 +2,7 @@
 
 module cache_control #(
     parameter s_offset = 5,
-    parameter s_index  = 3,
-    parameter s_tag    = 32 - s_offset - s_index,
-    parameter s_mask   = 2**s_offset,
-    parameter s_line   = 8*s_mask,
-    parameter num_sets = 2**s_index
+    parameter s_index  = 3
 )
 (
     input clk,
@@ -46,6 +42,11 @@ module cache_control #(
 
     output addrmux::addrmux_sel_t addrmux_sel
 );
+
+localparam s_tag    = 32 - s_offset - s_index;
+localparam s_mask   = 2**s_offset;
+localparam s_line   = 8*s_mask;
+localparam num_sets = 2**s_index;
 
 // ================================ State Transfer Logic ================================
 

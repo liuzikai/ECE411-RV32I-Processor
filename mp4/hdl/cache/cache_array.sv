@@ -1,6 +1,7 @@
-module comb_array #(
+module cache_array #(
     parameter s_index = 3,
-    parameter width = 1
+    parameter width = 1,
+    parameter resp_cycle = 0
 )
 (
     clk,
@@ -24,7 +25,6 @@ output logic [width-1:0] dataout;
 
 logic [width-1:0] data [num_sets-1:0];
 
-// Notice that
 always_ff @(posedge clk) begin
     if (rst) begin
         for (int i = 0; i < num_sets; ++i) data[i] <= '0;
@@ -34,7 +34,13 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    dataout = data[rindex];
+    generate
+        if (resp_cycle == 0) begin
+            dataout = data[rindex];
+        end else begin
+            dataout <= data[rindex];
+        end
+    endgenerate
 end
 
-endmodule : comb_array
+endmodule : cache_array

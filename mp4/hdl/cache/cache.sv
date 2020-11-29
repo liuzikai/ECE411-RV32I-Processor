@@ -3,11 +3,7 @@ controller, cache datapath, and bus adapter. */
 
 module cache #(
     parameter s_offset = 5,
-    parameter s_index  = 3,
-    parameter s_tag    = 32 - s_offset - s_index,
-    parameter s_mask   = 2**s_offset,
-    parameter s_line   = 8*s_mask,
-    parameter num_sets = 2**s_index
+    parameter s_index  = 3
 )
 (
     input clk,
@@ -37,6 +33,11 @@ module cache #(
     output logic ca_write          // write_i
 );
 
+localparam s_tag    = 32 - s_offset - s_index;
+localparam s_mask   = 2**s_offset;
+localparam s_line   = 8*s_mask;
+localparam num_sets = 2**s_index;
+
 // bus_adapter <-> cache_datapath
 logic [255:0] mem_wdata256;
 logic [255:0] mem_rdata256;
@@ -65,11 +66,11 @@ logic load_data[2];
 
 addrmux::addrmux_sel_t addrmux_sel;
 
-cache_control control (
+cache_control #(s_offset, s_index) control (
     .*
 );
 
-cache_datapath datapath (
+cache_datapath #(s_offset, s_index) datapath (
     .*
 );
 

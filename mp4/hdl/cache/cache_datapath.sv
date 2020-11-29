@@ -2,11 +2,7 @@
 
 module cache_datapath #(
     parameter s_offset = 5,
-    parameter s_index  = 3,
-    parameter s_tag    = 32 - s_offset - s_index,
-    parameter s_mask   = 2**s_offset,
-    parameter s_line   = 8*s_mask,
-    parameter num_sets = 2**s_index
+    parameter s_index  = 3
 )
 (
     input clk,
@@ -49,6 +45,11 @@ module cache_datapath #(
     input addrmux::addrmux_sel_t addrmux_sel
 );
 
+localparam s_tag    = 32 - s_offset - s_index;
+localparam s_mask   = 2**s_offset;
+localparam s_line   = 8*s_mask;
+localparam num_sets = 2**s_index;
+
 // ================================ Common ================================
 
 // Get set index from mem_addr
@@ -75,7 +76,7 @@ generate
 
         // Arrays will be reset to all 0 with rst
 
-        comb_array #(s_index, s_tag) tag_array (
+        cache_array #(s_index, s_tag) tag_array (
             .clk(clk),
             .rst(rst),
             .load(load_tag[i]),
@@ -85,7 +86,7 @@ generate
             .dataout(tag_out[i])
         );
 
-        comb_array #(s_index, 1) valid_array (
+        cache_array #(s_index, 1) valid_array (
             .clk(clk),
             .rst(rst),
             .load(set_valid[i]),
@@ -95,7 +96,7 @@ generate
             .dataout(valid_out[i])
         );
 
-        comb_array #(s_index, 1) dirty_array (
+        cache_array #(s_index, 1) dirty_array (
             .clk(clk),
             .rst(rst),
             .load(load_dirty[i]),
@@ -105,7 +106,7 @@ generate
             .dataout(dirty_out[i])
         );
 
-        comb_data_array #(s_offset, s_index) data_array (
+        cache_data_array #(s_offset, s_index) data_array (
             .clk(clk),
             .rst(rst),
             .write_en(data_write_en[i]),
@@ -117,7 +118,7 @@ generate
     end 
 endgenerate
 
-comb_array #(s_index, 1) lru_array (
+cache_array #(s_index, 1) lru_array (
     .clk(clk),
     .rst(rst),
     .load(load_lru),
