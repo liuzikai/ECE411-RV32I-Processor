@@ -1,11 +1,11 @@
 import rv32i_types::*;
 
-module lbht #(
+module tournament_p #(
     parameter s_pc_idx = 12,
-    parameter s_pc_entry = 2**s_pc_idx,
+    parameter s_row = 2**s_pc_idx,
     parameter s_pc_offset = 2,
-    parameter s_bhr = 2,
-    parameter s_pht = 2**s_bhr,
+    parameter s_gbhr = 5,
+    parameter s_col = 2**s_gbhr,
 )
 (
     input logic clk,
@@ -17,24 +17,29 @@ module lbht #(
     output logic br_take
 );
 
-enum logic [1:0] {
-    sn,
-    wn,
-    wt,
-    st
-} w_state, next_w_state, r_state;
+logic g_br_take, l_br_take;
 
-logic [1:0] pht [s_pht];
-logic [s_bhr-1:0] bhrt [s_pc_entry];
-logic [s_pc_idx-1:0] r_pc, w_pc;
-logic [s_bhr-1:0] r_bhr, w_bhr;
+gbht gbht(
+    .clk,
+    .rst,
+    .update,
+    .br_en,
+    .i_addr,
+    .i_addr_update,
+    .br_take(g_br_take)
+);
 
-assign r_pc = i_addr[s_pc_idx+s_pc_offset-1:s_pc_offset];
-assign w_pc = i_addr_update[s_pc_idx+s_pc_offset-1:s_pc_offset];
-assign r_bhr = bhrt[r_pc];
-assign w_bhr = bhrt[w_pc];
-assign r_state = pht[r_bhr];
-assign w_state = pht[w_bhr];
+lbht lbht(
+    .clk,
+    .rst,
+    .update,
+    .br_en,
+    .i_addr,
+    .i_addr_update,
+    .br_take(l_br_take)
+);
+
+
 
 always_comb begin : assign_br_take
     br_take = 1'b0;
@@ -72,16 +77,16 @@ end
 
 always_ff @(posedge clk) begin
     if (rst) begin
-        for (int i=0; i<s_pht; i=i+1) begin
-            pht[i] <= wn;
+        for (int i=0; i<s_row; i=i+1) begin
+            for (int j=0; j<s_col; j=j+1) begin
+                predictors[i][j] <= wn;
+            end
         end
-        for (int j=0; j<s_pc_entry; j=j+1) begin
-            bhrt[j] <= s_bhr{1'b0};
-        end
+        gbhr <= s_gbhr{1'b0};
     end else if (update) begin
-        pht[w_bhr] <= next_w_state;
-        bhrt[w_pc] <= {bhr[w_pc][s_bhr-2:0], br_en};
+        predictors[w_row][w_col] <= next_w_state;
+        gbhr <= {gbhr[s_gbhr-2:0], br_en};
     end
 end
 
-endmodule : lbht
+endmodule : tournament_p
