@@ -111,17 +111,17 @@ end
 
 assign lru_in[0] = ~hit_way[way_deg-1];
 generate
-    genvar d, c;
+    genvar d;
     for (d = 1; d < way_deg; ++d) begin : lru_depth
-        for (c = 0; c < 2**d; ++c) begin : lru_level
-            always_comb begin : lru_combine
+        always_comb begin : lru_combine
+            for (int c = 0; c < 2**d; ++c) begin : lru_level
                 if (hit_way[(way_deg-1) -: d] == c) begin
                     lru_in[c + 2**d - 1] = ~hit_way[way_deg-1-d];
                 end else begin
                     lru_in[c + 2**d - 1] = lru_out[c + 2**d - 1];
                 end
-            end : lru_combine
-        end : lru_level
+            end : lru_level
+        end : lru_combine
     end : lru_depth
 endgenerate
 
@@ -150,7 +150,7 @@ always_comb begin : state_operation_logic
             // hit will ba available sometime after entering this stage
 
             // Update LRU, for both read and write
-            // See above                    
+            // See above for generation of lru_in                  
             load_lru = hit;     // only update if hit
 
             // Feed hit data to upstream

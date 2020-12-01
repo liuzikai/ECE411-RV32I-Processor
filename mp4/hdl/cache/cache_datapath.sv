@@ -121,12 +121,14 @@ generate
     end 
 endgenerate
 
-register #(way_count-1) lru_reg (
+cache_array #(s_index, 2**way_deg-1) lru_array (
     .clk(clk),
     .rst(rst),
     .load(load_lru),
-    .in(lru_in),
-    .out(lru_out)
+    .rindex(set_index),
+    .windex(set_index),
+    .datain(lru_in),
+    .dataout(lru_out)
 );
 
 
@@ -140,7 +142,7 @@ always_comb begin : match_logic
     for (int i = 0; i < 2**way_deg; ++i) begin
         if (valid_out[i] && tag === tag_out[i]) begin
             hit = 1'b1;
-            hit_way = 1;
+            hit_way = i;
         end
     end
 
@@ -150,15 +152,15 @@ end : match_logic
 // Check whether the LRU way is dirty
 assign lru_way[way_deg-1] = lru_out[0];
 generate
-    genvar d, c;
+    genvar d;
     for (d = 1; d < way_deg; ++d) begin : lru_depth
-        for (c = 0; c < 2**d; ++c) begin : lru_level
-            always_comb begin : lru_combine
+        always_comb begin : lru_combine
+            for (int c = 0; c < 2**d; ++c) begin : lru_level
                 if (c == lru_out[(way_deg-1) -: d]) begin
-                    lru_way[way_deg-1-d] = lru_way[c + 2**d - 1];
+                    lru_way[way_deg-1-d] = lru_out[c + 2**d - 1];
                 end
-            end : lru_combine
-        end : lru_level
+            end : lru_level
+        end : lru_combine
     end : lru_depth
 endgenerate
 assign lru_dirty = dirty_out[lru_way];

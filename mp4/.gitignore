@@ -30,5 +30,4 @@ timing
 *.summary
 *.tcl
 .qsys_edit/
-hvl/cache_unit_test.sv
 testcode/mp3-final.*
