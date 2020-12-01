@@ -6,9 +6,8 @@ typedef enum bit {
 endpackage
 
 package addrmux;
-typedef enum bit [1:0] {
-    mem_addr = 2'b00,
-    tag0_addr = 2'b10,
-    tag1_addr = 2'b11
+typedef enum bit {
+    mem_addr = 1'b0,
+    tag_addr = 1'b1
 } addrmux_sel_t;
 endpackage

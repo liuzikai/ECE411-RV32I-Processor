@@ -3,7 +3,9 @@ controller, cache datapath, and bus adapter. */
 
 module cache #(
     parameter s_offset = 5,
-    parameter s_index  = 3
+    parameter s_index  = 3,
+    parameter way_deg = 1,    // >=1, also the number of bit(s) for way indices
+    parameter resp_cycle = 0
 )
 (
     input clk,
@@ -45,32 +47,33 @@ logic [31:0]  mem_byte_enable256;
 
 // datapath -> control
 logic hit;
-logic hit_way;
+logic [way_deg-1:0] hit_way;
 
-logic lru_way;
+logic [way_deg-1:0] lru_way;
 logic lru_dirty;
 
 // control -> datapath
-logic load_tag[2];
+logic load_tag[2**way_deg];
 
-logic set_valid[2];
+logic set_valid[2**way_deg];
 
-logic lru_in;
+logic [2**way_deg-2:0] lru_out;
+logic [2**way_deg-2:0] lru_in;
 logic load_lru;
 
-logic dirty_in[2];
-logic load_dirty[2];
+logic dirty_in[2**way_deg];
+logic load_dirty[2**way_deg];
 
 datamux::datamux_sel_t datamux_sel;
-logic load_data[2];
+logic load_data[2**way_deg];
 
 addrmux::addrmux_sel_t addrmux_sel;
 
-cache_control #(s_offset, s_index) control (
+cache_control #(s_offset, s_index, way_deg, resp_cycle) control (
     .*
 );
 
-cache_datapath #(s_offset, s_index) datapath (
+cache_datapath #(s_offset, s_index, way_deg, resp_cycle) datapath (
     .*
 );
 

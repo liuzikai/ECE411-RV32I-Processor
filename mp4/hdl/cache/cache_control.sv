@@ -1,8 +1,10 @@
 `define BAD_STATE $fatal("%0t %s %0d: Illegal state", $time, `__FILE__, `__LINE__)
 
 module cache_control #(
-    parameter s_offset = 5,
-    parameter s_index  = 3
+    parameter s_offset = 5,   // must be 5 to be consistent with the cacheline size
+    parameter s_index  = 3,
+    parameter way_deg = 1,    // >=1, also the number of bit(s) for way indices
+    parameter resp_cycle = 0  // options: 0 or 1
 )
 (
     input clk,
@@ -21,24 +23,26 @@ module cache_control #(
 
     // datapath -> control
     input logic hit,
-    input logic hit_way,
+    input logic [way_deg-1:0] hit_way,
 
-    input logic lru_way,
+    input logic [way_deg-1:0] lru_way,
     input logic lru_dirty,
 
     // control -> datapath
-    output logic load_tag[2],
+    output logic load_tag[2**way_deg],
 
-    output logic set_valid[2],
+    output logic set_valid[2**way_deg],
 
-    output logic lru_in,
+    // N way(s) take N-1 pseudo LRU bits
+    input  logic [2**way_deg-2:0] lru_out,  
+    output logic [2**way_deg-2:0] lru_in,
     output logic load_lru,
 
-    output logic dirty_in[2],
-    output logic load_dirty[2],
+    output logic dirty_in[2**way_deg],
+    output logic load_dirty[2**way_deg],
 
     output datamux::datamux_sel_t datamux_sel,
-    output logic load_data[2],
+    output logic load_data[2**way_deg],
 
     output addrmux::addrmux_sel_t addrmux_sel
 );
@@ -51,27 +55,52 @@ localparam num_sets = 2**s_index;
 // ================================ State Transfer Logic ================================
 
 enum logic [1:0] {
-    s_match,
+    s_idle,   // not used for 0-resp-cycle cache
+    s_match,  // may wait for more than one cycle
     s_writeback,
     s_load
 } state, next_state;
 
-always_comb begin : next_state_logic
-    next_state = state;  // default
-    unique case (state)
-        s_match: begin
-            if ((mem_read | mem_write) & ~hit) begin
-                if (~lru_dirty) next_state = s_load;
-                else            next_state = s_writeback;
-            end else begin
-                next_state = s_match;
-            end
+
+generate
+    if (resp_cycle == 0) begin
+        // Use s_match only
+        always_comb begin : next_state_logic
+            unique case (state)
+                s_match: begin
+                    if ((mem_read | mem_write) & ~hit) begin
+                        if (~lru_dirty) next_state = s_load;
+                        else            next_state = s_writeback;
+                    end else begin
+                        next_state = s_match;
+                    end
+                end
+                s_writeback: next_state = (ca_resp ? s_load : s_writeback);
+                s_load:      next_state = (ca_resp ? s_match : s_load);
+                default: next_state = state;
+            endcase
         end
-        s_writeback: next_state = (ca_resp ? s_load : s_writeback);
-        s_load:      next_state = (ca_resp ? s_match : s_load);
-        default: ;
-    endcase
-end
+    end else if (resp_cycle == 1) begin
+        // Use both s_idle and s_match (transfer in 1 cycle)
+        always_comb begin : next_state_logic
+            unique case (state)
+                s_idle: next_state = ((mem_read || mem_write) ? s_match : s_idle);
+                s_match: begin
+                    if (hit) next_state = s_idle;
+                    else begin
+                        if (~lru_dirty) next_state = s_load;
+                        else            next_state = s_writeback;
+                    end
+                end
+                s_writeback: next_state = (ca_resp ? s_load : s_writeback);
+                s_load:      next_state = (ca_resp ? s_match : s_load);
+                default: next_state = state;
+            endcase
+        end
+    end
+endgenerate
+
+
 
 always_ff @(posedge clk) begin: next_state_assignment
     if (rst) state <= s_match;
@@ -80,17 +109,32 @@ end
 
 // ================================ State Operation Logic ================================
 
+assign lru_in[0] = ~hit_way[way_deg-1];
+generate
+    genvar d, c;
+    for (d = 1; d < way_deg; ++d) begin : lru_depth
+        for (c = 0; c < 2**d; ++c) begin : lru_level
+            always_comb begin : lru_combine
+                if (hit_way[(way_deg-1) -: d] == c) begin
+                    lru_in[c + 2**d - 1] = ~hit_way[way_deg-1-d];
+                end else begin
+                    lru_in[c + 2**d - 1] = lru_out[c + 2**d - 1];
+                end
+            end : lru_combine
+        end : lru_level
+    end : lru_depth
+endgenerate
+
 always_comb begin : state_operation_logic
     
     // Default values
-    for (int i = 0; i < 2; ++i) begin
+    for (int i = 0; i < 2**way_deg; ++i) begin
         load_tag[i] = 1'b0;
         set_valid[i] = 1'b0;
         dirty_in[i] = 1'b0;
         load_dirty[i] = 1'b0;
         load_data[i] = 1'b0;
     end
-    lru_in = 1'b0;
     load_lru = 1'b0;
     datamux_sel = datamux::ca_rdata;
     addrmux_sel = addrmux::mem_addr;
@@ -106,7 +150,7 @@ always_comb begin : state_operation_logic
             // hit will ba available sometime after entering this stage
 
             // Update LRU, for both read and write
-            lru_in = ~hit_way;  // the other is least recently used, set anyway
+            // See above                    
             load_lru = hit;     // only update if hit
 
             // Feed hit data to upstream
@@ -131,7 +175,7 @@ always_comb begin : state_operation_logic
 
             // Writeback the dirty LRU way
             ca_write = 1'b1;
-            addrmux_sel = addrmux::addrmux_sel_t'({1'b1, lru_way});
+            addrmux_sel = addrmux::tag_addr;
 
         end
         s_load: begin

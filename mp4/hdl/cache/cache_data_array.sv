@@ -42,14 +42,16 @@ always_ff @(posedge clk) begin
     end
 end
 
-always_comb begin
-    generate
-        if (resp_cycle == 0) begin
+generate
+    if (resp_cycle == 0) begin
+        always_comb begin
             dataout = data[rindex];
-        end else begin
+        end 
+    end else begin
+        always_ff @(posedge clk) begin
             dataout <= data[rindex];
         end
-    endgenerate
-end
+    end
+endgenerate
 
 endmodule : cache_data_array

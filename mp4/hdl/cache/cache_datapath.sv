@@ -1,8 +1,10 @@
 `define BAD_MUX_SEL $fatal("%0t %s %0d: Illegal mux select", $time, `__FILE__, `__LINE__)
 
 module cache_datapath #(
-    parameter s_offset = 5,
-    parameter s_index  = 3
+    parameter s_offset = 5,   // must be 5 to be consistent with the cacheline size
+    parameter s_index  = 3,
+    parameter way_deg = 1,    // >=1, also the number of bit(s) for way indices
+    parameter resp_cycle = 0
 )
 (
     input clk,
@@ -23,24 +25,25 @@ module cache_datapath #(
 
     // datapath -> control
     output logic hit,
-    output logic hit_way,
+    output logic [way_deg-1:0] hit_way,
 
-    output logic lru_way,
+    output logic [way_deg-1:0] lru_way,
     output logic lru_dirty,
 
     // control -> datapath
-    input logic load_tag[2],
+    input logic load_tag[2**way_deg],
 
-    input logic set_valid[2],
+    input logic set_valid[2**way_deg],
 
-    input logic lru_in,
-    input logic load_lru,
+    output logic [2**way_deg-2:0] lru_out,  
+    input  logic [2**way_deg-2:0] lru_in,
+    input  logic load_lru,
 
-    input logic dirty_in[2],
-    input logic load_dirty[2],
+    input logic dirty_in[2**way_deg],
+    input logic load_dirty[2**way_deg],
 
     input datamux::datamux_sel_t datamux_sel,
-    input logic load_data[2],
+    input logic load_data[2**way_deg],
 
     input addrmux::addrmux_sel_t addrmux_sel
 );
@@ -49,6 +52,7 @@ localparam s_tag    = 32 - s_offset - s_index;
 localparam s_mask   = 2**s_offset;
 localparam s_line   = 8*s_mask;
 localparam num_sets = 2**s_index;
+localparam way_count = 2**way_deg;
 
 // ================================ Common ================================
 
@@ -62,17 +66,16 @@ assign tag = mem_addr[31 -: s_tag];
 
 // ================================ Arrays ================================
 
-logic [s_tag-1:0] tag_out[2];
-logic valid_out[2];
-logic dirty_out[2];
+logic [s_tag-1:0] tag_out[way_count];
+logic valid_out[way_count];
+logic dirty_out[way_count];
 logic [s_line-1:0] data_in;
-logic [s_line-1:0] data_out[2];
-logic lru_out;
-logic [31:0] data_write_en[2];
+logic [s_line-1:0] data_out[way_count];
+logic [31:0] data_write_en[way_count];
 
 genvar i;
 generate
-    for (i = 0; i < 2; ++i) begin : array_block
+    for (i = 0; i < way_count; ++i) begin : array_block
 
         // Arrays will be reset to all 0 with rst
 
@@ -118,34 +121,48 @@ generate
     end 
 endgenerate
 
-cache_array #(s_index, 1) lru_array (
+register #(way_count-1) lru_reg (
     .clk(clk),
     .rst(rst),
     .load(load_lru),
-    .rindex(set_index),
-    .windex(set_index),
-    .datain(lru_in),
-    .dataout(lru_out)
+    .in(lru_in),
+    .out(lru_out)
 );
 
 
 // ================================ Matching Logic ================================
 
-logic way_matched[2];
-
 always_comb begin : match_logic
 
     // Match address with tag (if valid)
-    way_matched[0] = valid_out[0] && (tag === tag_out[0]);
-    way_matched[1] = valid_out[1] && (tag === tag_out[1]);
-    hit = way_matched[0] || way_matched[1];
-    hit_way = way_matched[1];  // (way_matched[0] ? 1'b0 : 1'b1)
-
-    // Check whether the LRU way is dirty
-    lru_way = lru_out;
-    lru_dirty = dirty_out[lru_out];
+    hit = '0;
+    hit_way = '0;
+    for (int i = 0; i < 2**way_deg; ++i) begin
+        if (valid_out[i] && tag === tag_out[i]) begin
+            hit = 1'b1;
+            hit_way = 1;
+        end
+    end
 
 end : match_logic
+
+
+// Check whether the LRU way is dirty
+assign lru_way[way_deg-1] = lru_out[0];
+generate
+    genvar d, c;
+    for (d = 1; d < way_deg; ++d) begin : lru_depth
+        for (c = 0; c < 2**d; ++c) begin : lru_level
+            always_comb begin : lru_combine
+                if (c == lru_out[(way_deg-1) -: d]) begin
+                    lru_way[way_deg-1-d] = lru_way[c + 2**d - 1];
+                end
+            end : lru_combine
+        end : lru_level
+    end : lru_depth
+endgenerate
+assign lru_dirty = dirty_out[lru_way];
+
 
 // ================================ Muxes ================================
 
@@ -177,8 +194,7 @@ always_comb begin : muxes
     // Align mem_addr to 32 bytes and pass to cacheline adapter
     unique case (addrmux_sel)
         addrmux::mem_addr: ca_addr = {mem_addr[31:s_offset], 5'b00000};
-        addrmux::tag0_addr: ca_addr = {tag_out[0], set_index, 5'b00000};
-        addrmux::tag1_addr: ca_addr = {tag_out[1], set_index, 5'b00000};
+        addrmux::tag_addr: ca_addr = {tag_out[lru_way], set_index, 5'b00000};
         default: ca_addr = {32'b0};
     endcase
 
