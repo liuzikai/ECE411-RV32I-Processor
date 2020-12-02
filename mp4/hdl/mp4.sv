@@ -12,6 +12,15 @@ module mp4(
     input  logic            mem_resp
 );
 
+// CPU <-> instruction prefetch
+rv32i_word i_addr_prefetch;
+logic i_read_prefetch;
+logic i_resp_prefetch;
+// L1 prefetch <-> L2 cache
+rv32i_word d_l1_l2_addr_prefecth;
+logic d_l1_l2_read_prefecth;
+logic d_l1_l2_resp_prefecth;
+
 // CPU <-> I-Cache & I-Bus-Adapter
 rv32i_word i_addr;
 rv32i_word i_rdata;
@@ -71,7 +80,7 @@ cpu cpu(
 
 bus_adapter i_bus_adapter (
     // CPU side
-    .address(i_addr),
+    .address(i_addr_prefetch),
     .mem_wdata('X),
     .mem_rdata(i_rdata),
     .mem_byte_enable(4'b111),
@@ -86,13 +95,13 @@ cache l1_i_cache(
     .clk(clk),
     .rst(rst),
     // I-Bus-Adapter side
-    .mem_addr(i_addr),
+    .mem_addr(i_addr_prefetch),
     .mem_wdata256('X),
     .mem_rdata256(i_rdata256),
     .mem_byte_enable256(32'hFFFFFFFF),
-    .mem_read(i_read),
+    .mem_read(i_read_prefetch),
     .mem_write(1'b0),
-    .mem_resp(i_resp),
+    .mem_resp(i_resp_prefetch),
     // Arbiter side
     .ca_wdata(),
     .ca_rdata(i_a_rdata),
@@ -100,6 +109,19 @@ cache l1_i_cache(
     .ca_resp(i_a_resp),
     .ca_read(i_a_read),
     .ca_write()
+);
+
+prefetch instruction_prefetch(
+    .clk(clk),
+    .rst(rst),
+    // interface with the CPU 
+    .mem_addr_from_cpu(i_addr),   
+    .mem_read_from_cpu(i_read),
+    .cpu_resp(i_resp),
+    // interface with the cache
+    .mem_addr_out(i_addr_prefetch),
+    .cache_read(i_read_prefetch),
+    .cache_resp(i_resp_prefetch)
 );
 
 bus_adapter d_bus_adapter (
@@ -135,17 +157,30 @@ cache #(5, 3, 1, 0) l1_d_cache(
     // NOTE: no byte_enable
 );
 
+prefetch l1_l2_data_prefetch(
+    .clk(clk),
+    .rst(rst),
+    // interface with the L1 data cache
+    .mem_addr_from_cpu(d_addr_l2),   
+    .mem_read_from_cpu(d_read_l2),
+    .cpu_resp(d_resp_l2),
+    // interface with the L2 data cache
+    .mem_addr_out(d_l1_l2_addr_prefecth),
+    .cache_read(d_l1_l2_read_prefecth),
+    .cache_resp(d_l1_l2_resp_prefecth)
+);
+
 cache #(5, 6, 2, 1) l2_d_cache(
     .clk(clk),
     .rst(rst),
     // L1 D-Cache side
-    .mem_addr(d_addr_l2),
+    .mem_addr(d_l1_l2_addr_prefecth),
     .mem_wdata256(d_wdata256_l2),
     .mem_rdata256(d_rdata256_l2),
     .mem_byte_enable256(32'hFFFFFFFF),
-    .mem_read(d_read_l2),
+    .mem_read(d_l1_l2_read_prefecth),
     .mem_write(d_write_l2),
-    .mem_resp(d_resp_l2),
+    .mem_resp(d_l1_l2_resp_prefecth),
     // Arbiter side
     .ca_wdata(d_a_wdata),
     .ca_rdata(d_a_rdata),
