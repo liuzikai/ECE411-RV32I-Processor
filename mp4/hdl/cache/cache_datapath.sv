@@ -150,19 +150,18 @@ end : match_logic
 
 
 // Check whether the LRU way is dirty
-assign lru_way[way_deg-1] = lru_out[0];
+
 generate
-    genvar d;
-    for (d = 1; d < way_deg; ++d) begin : lru_depth
-        always_comb begin : lru_combine
-            for (int c = 0; c < 2**d; ++c) begin : lru_level
-                if (c == lru_out[(way_deg-1) -: d]) begin
-                    lru_way[way_deg-1-d] = lru_out[c + 2**d - 1];
-                end
-            end : lru_level
-        end : lru_combine
-    end : lru_depth
+    if (way_deg == 1) assign lru_way = lru_out;
+    else if (way_deg == 2) begin
+        always_comb begin
+            // 4 way, LRU tree to LRU way index
+            lru_way[1] = lru_out[0];
+            lru_way[0] = (lru_way[1] == 0) ? lru_out[1] : lru_out[2];
+        end
+    end else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
 endgenerate
+
 assign lru_dirty = dirty_out[lru_way];
 
 
@@ -178,7 +177,7 @@ always_comb begin : muxes
     endcase
 
     // Load data control
-    for (int i = 0; i < 2; ++i) begin
+    for (int i = 0; i < way_count; ++i) begin
         unique case ({load_data[i], datamux_sel})
             2'b10: data_write_en[i] = mem_byte_enable256;  // write only the enabled bytes
             2'b11: data_write_en[i] = {32{1'b1}};  // read the full cache line

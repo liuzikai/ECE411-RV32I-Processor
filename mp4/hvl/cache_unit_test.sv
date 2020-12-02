@@ -8,7 +8,7 @@ always #5 clk = clk === 1'b0;
 
 localparam s_offset = 5;   // must be 5 to be consistent with the cacheline size
 localparam s_index  = 3;
-localparam way_deg = 2;    // >=1, also the number of bit(s) for way indices
+localparam way_deg = 1;    // >=1, also the number of bit(s) for way indices
 localparam resp_cycle = 1;  // options: 0 or 1
 
 logic rst;
@@ -195,6 +195,11 @@ task automatic test_write_miss_with_wb(logic [31:0] addr, logic [255:0] feed_dat
     @(posedge clk);
 endtask
 
+task automatic test_lru_vector(logic [2**way_deg-2:0] lru_vec, int line);
+    @(negedge clk);
+    if (dut.lru_out !== lru_vec) $fatal("%0t %s %0d: Unexpected LRU vector", $time, `__FILE__, line);
+endtask
+
 initial begin : test_vectors
 
     dut.control.state = dut.control.s_match;  // avoid fatal
@@ -245,7 +250,24 @@ initial begin : test_vectors
     // TEST: sequence 1 and 2 should not lost
     test_read_hit(32'h10000000, 32'hFFFFFFFF, `__LINE__);
     test_read_hit(32'h00000008, 32'h66666666, `__LINE__);
-    // Seq 1 is last used
+    // Seq 2 is LRU
+
+    if (way_deg >= 2) begin
+        // TEST: read sequence 3.1 & 3.2, with the same index as seq 1 & 2
+        test_read_miss(
+            32'h2000000C,
+            {8{32'h31313131}},
+            32'h31313131,
+            `__LINE__
+        );
+        test_read_miss(
+            32'h3000000C,
+            {8{32'h32323232}},
+            32'h32323232,
+            `__LINE__
+        );
+        // Seq 2 is LRU
+    end
 
     // TEST: read sequence 4, with the same index as seq 1 and 2. Seq 2 should be replaced
     test_read_miss(
@@ -258,6 +280,14 @@ initial begin : test_vectors
     // TEST: seq 1 should not miss
     test_read_hit(32'h00000000, 32'h88888888, `__LINE__);
     test_read_hit(32'h0000001C, 32'h11111111, `__LINE__);
+    // Seq 4 is LRU
+
+    if (way_deg >= 2) begin
+        // TEST: seq 3.1 & 3.2 should not miss
+        test_read_hit(32'h20000000, 32'h31313131, `__LINE__);
+        test_read_hit(32'h30000000, 32'h32323232, `__LINE__);
+        // Seq 4 is LRU
+    end
 
     // TEST: seq 2 should miss, seq 4 should be replaced
     test_read_miss(
@@ -278,7 +308,7 @@ initial begin : test_vectors
     // TEST: seq 3 should be totally unaffected
     test_read_hit(32'h00000084, 32'hAAAAAAAA, `__LINE__);
 
-    // TEST: seq 1 should miss, seq 2 should be replace
+    // TEST: seq 1 should miss, seq 2 (2-way)/seq 3.1 (4-way) should be replaced
     test_read_miss(
         32'h00000000,
         256'h1111111122222222333333334444444455555555666666667777777788888888,
@@ -288,18 +318,57 @@ initial begin : test_vectors
 
     // TEST: seq 4 shoudl not miss
     test_read_hit(32'h8000000C, 32'hFFFFEEEE, `__LINE__);
+    
+    if (way_deg == 1) begin
 
-    // TEST: read seq 5, with the same index as seq 3
-    test_read_miss( 32'h03000080, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, `__LINE__);
+        // TEST: read seq 5, with the same index as seq 3
+        test_read_miss(32'h03000080, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, `__LINE__);
 
-    // TEST: read seq 6, with the same index as seq 3 & 5. Seq 3 should be replaced
-    test_read_miss( 32'h05000080, {8{32'hCCCCCCCC}}, 32'hCCCCCCCC, `__LINE__);
+        // TEST: read seq 6, with the same index as seq 3 & 5. Seq 3 should be replaced (2-way)
+        test_read_miss(32'h05000080, {8{32'hCCCCCCCC}}, 32'hCCCCCCCC, `__LINE__);
 
-    // TEST: read seq 7, with the same index as seq 6 & 5. Seq 5 should be replaced
-    test_read_miss( 32'h05500080, {8{32'hDDDDDDDD}}, 32'hDDDDDDDD, `__LINE__);
+        // TEST: read seq 7, with the same index as seq 6 & 5 (& 3 for 4-way). Seq 5 should be replaced (2-way)
+        test_read_miss(32'h05500080, {8{32'hDDDDDDDD}}, 32'hDDDDDDDD, `__LINE__);
 
-    // TEST: seq 5 should miss. Seq 6 should be replaced
-    test_read_miss( 32'h03000080, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, `__LINE__);
+        // TEST: seq 5 should miss. Seq 6 should be replaced
+        test_read_miss(32'h03000080, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, `__LINE__);
+
+    end else if (way_deg == 2) begin
+
+        // TEST: seq 3 should not miss, LRU vector 000
+        test_read_hit(32'h00000084, 32'hAAAAAAAA, `__LINE__);
+        test_lru_vector(011, `__LINE__);
+
+        // TEST: read seq 5, with the same index as seq 3
+        test_read_miss(32'h03000080, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, `__LINE__);
+        test_lru_vector(110, `__LINE__);
+        
+        // TEST: seq 5 should not miss.
+        test_read_hit(32'h03000080, 32'hBBBBBBBB, `__LINE__);
+        test_lru_vector(110, `__LINE__);
+
+        // TEST: read seq 6, with the same index as seq 3 & 5.
+        test_read_miss(32'h05000080, {8{32'hCCCCCCCC}}, 32'hCCCCCCCC, `__LINE__);
+        test_lru_vector(101, `__LINE__);
+
+        // TEST: read seq 7, with the same index as seq 6 & 5 & 3.
+        test_read_miss(32'h05500080, {8{32'hDDDDDDDD}}, 32'hDDDDDDDD, `__LINE__);
+        test_lru_vector(000, `__LINE__);
+
+        // TEST: read seq 8, with the same index as seq 3 & 5 & 6 & 7. Seq 3 should be replaced
+        test_read_miss(32'h05600080, {8{32'hEEEEEEEE}}, 32'hEEEEEEEE, `__LINE__);
+        test_lru_vector(011, `__LINE__);
+
+        // TEST: read seq 3, seq 6 should be replaced
+        test_read_miss(32'h00000080, {8{32'hAAAAAAAA}}, 32'hAAAAAAAA, `__LINE__);
+        test_lru_vector(110, `__LINE__);
+
+        // TEST: read seq 6, seq 5 should be replaced
+        test_read_miss(32'h03000080, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, `__LINE__);
+        test_lru_vector(101, `__LINE__);
+        
+    end
+    
 
     // TEST: read a cache line using non-zero offset
     test_read_miss(
@@ -312,8 +381,15 @@ initial begin : test_vectors
 
     // ================================ Write Tests ================================
 
+    if (way_deg == 2) begin
+        rst = 1'b1;
+        repeat (5) @(posedge clk);
+        rst = 1'b0;
+    end
+
     // Load data 1
     test_read_miss(32'hF0000000, {8{32'hDDDDDDDD}}, 32'hDDDDDDDD, `__LINE__);
+    if (way_deg == 2) test_lru_vector(011, `__LINE__);
     
     // TEST: hit write to offset 0
     test_write_hit(32'hF0000000, 32'hEEEEEEEE, 4'b1111, `__LINE__);
@@ -327,6 +403,7 @@ initial begin : test_vectors
     test_read_hit(32'hF0000014, 32'hDDDDDDDD, `__LINE__);
     test_read_hit(32'hF0000018, 32'hDDDDDDDD, `__LINE__);
     test_read_hit(32'hF000001C, 32'hDDDDDDDD, `__LINE__);
+    if (way_deg == 2) test_lru_vector(011, `__LINE__);
 
     // TEST: with bit enabled
     test_write_hit(32'hF0000004, 32'hCCCCCCCC, 4'b0001, `__LINE__);
@@ -344,9 +421,11 @@ initial begin : test_vectors
     test_read_hit(32'hF0000014, 32'hDDDDCCCC, `__LINE__);
     test_read_hit(32'hF0000018, 32'hCCCCDDDD, `__LINE__);
     test_read_hit(32'hF000001C, 32'hCCDDDDCC, `__LINE__);
+    if (way_deg == 2) test_lru_vector(011, `__LINE__);
 
     // TEST: write miss data 2
     test_write_miss(32'hE0000000, {8{32'h00000000}}, 32'h11111111, 4'b0110, `__LINE__);
+    if (way_deg == 2) test_lru_vector(110, `__LINE__);
     test_read_hit(32'hE0000000, 32'h00111100, `__LINE__);
     test_read_hit(32'hE000001C, 32'h00000000, `__LINE__);
 
@@ -358,6 +437,17 @@ initial begin : test_vectors
     test_read_hit(32'hF0000014, 32'hDDDDCCCC, `__LINE__);
     test_read_hit(32'hF0000018, 32'hCCCCDDDD, `__LINE__);
     test_read_hit(32'hF000001C, 32'hCCDDDDCC, `__LINE__);
+    if (way_deg == 2) test_lru_vector(111, `__LINE__);
+
+    if (way_deg == 2) begin
+        // TEST: write miss data 2.1 & 2.2
+        test_write_miss(32'hE1000000, {8{32'h00000000}}, 32'h11111111, 4'b0110, `__LINE__);
+        test_lru_vector(010, `__LINE__);
+        test_read_hit(32'hE1000000, 32'h00111100, `__LINE__);
+        test_write_miss(32'hE2000000, {8{32'h00000000}}, 32'h11111111, 4'b0110, `__LINE__);
+        test_lru_vector(001, `__LINE__);
+        test_read_hit(32'hE2000000, 32'h00111100, `__LINE__);
+    end
 
     // TEST: write miss data 3, replacing data 2
     test_write_miss_with_wb(
@@ -368,29 +458,54 @@ initial begin : test_vectors
         {{7{32'h00000000}}, 32'h00111100}, 
         `__LINE__
     );
+    if (way_deg == 2) test_lru_vector(100, `__LINE__);
 
     // TEST: data 1 should not change
     test_read_hit(32'hF0000004, 32'hDDDDDDCC, `__LINE__);
     test_read_hit(32'hF000001C, 32'hCCDDDDCC, `__LINE__);
+    if (way_deg == 2) test_lru_vector(111, `__LINE__);
 
     // TEST: data 3 should be updated
     test_read_hit(32'hD0000000, 32'h22002200, `__LINE__);
     test_read_hit(32'hD0000010, 32'h00000000, `__LINE__);
+    if (way_deg == 2) test_lru_vector(110, `__LINE__);
 
-    // TEST: write miss data 2, replacing data 1
-    test_write_miss_with_wb(
-        32'hE0000000, 
-        {{7{32'h00000000}}, 32'h00111100}, 
-        32'h11111111, 4'b1001, 
-        32'hF0000000,
-        256'hCCDDDDCCCCCCDDDDDDDDCCCCCCDDDDDDDDCCDDDDDDDDCCDDDDDDDDCCEEEEEEEE,
-        `__LINE__
-    );
+    if (way_deg == 2) begin
+        // TEST: data 2.1 & 2.2 should not change
+        test_read_hit(32'hE1000000, 32'h00111100, `__LINE__);
+        test_lru_vector(010, `__LINE__);
+        test_read_hit(32'hE2000000, 32'h00111100, `__LINE__);
+        test_lru_vector(001, `__LINE__);
+    end
 
-    // TEST: LRU but not dirty
-    test_read_miss(32'hE00000C0, {8{32'hAAAAAAAA}}, 32'hAAAAAAAA, `__LINE__);
-    test_write_miss(32'hD00000C0, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, 4'b1111, `__LINE__);
-    test_read_miss(32'hC00000C0, {8{32'hCCCCCCCC}}, 32'hCCCCCCCC, `__LINE__);
+    if (way_deg == 1) begin
+        // TEST: write miss data 2, replacing data 1
+        test_write_miss_with_wb(
+            32'hE0000000, 
+            {{7{32'h00000000}}, 32'h00111100}, 
+            32'h11111111, 4'b1001, 
+            32'hF0000000,
+            256'hCCDDDDCCCCCCDDDDDDDDCCCCCCDDDDDDDDCCDDDDDDDDCCDDDDDDDDCCEEEEEEEE,
+            `__LINE__
+        );
+
+        // TEST: LRU but not dirty
+        test_read_miss(32'hE00000C0, {8{32'hAAAAAAAA}}, 32'hAAAAAAAA, `__LINE__);
+        test_write_miss(32'hD00000C0, {8{32'hBBBBBBBB}}, 32'hBBBBBBBB, 4'b1111, `__LINE__);
+        test_read_miss(32'hC00000C0, {8{32'hCCCCCCCC}}, 32'hCCCCCCCC, `__LINE__);
+    end else if (way_deg == 2) begin
+        // TEST: write miss data 2, replacing data 3
+        test_write_miss_with_wb(
+            32'hE0000000, 
+            {{7{32'h00000000}}, 32'h00111100}, 
+            32'h11111111, 4'b1001, 
+            32'hD0000000,
+            {{7{32'h00000000}}, 32'h22002200}, 
+            `__LINE__
+        );
+    end
+
+    
 
     $finish;
     

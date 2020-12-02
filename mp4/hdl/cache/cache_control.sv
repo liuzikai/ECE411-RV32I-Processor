@@ -65,7 +65,7 @@ enum logic [1:0] {
 generate
     if (resp_cycle == 0) begin
         // Use s_match only
-        always_comb begin : next_state_logic
+        always_comb begin : next_state_logic_0
             unique case (state)
                 s_match: begin
                     if ((mem_read | mem_write) & ~hit) begin
@@ -82,7 +82,7 @@ generate
         end
     end else if (resp_cycle == 1) begin
         // Use both s_idle and s_match (transfer in 1 cycle)
-        always_comb begin : next_state_logic
+        always_comb begin : next_state_logic_1
             unique case (state)
                 s_idle: next_state = ((mem_read || mem_write) ? s_match : s_idle);
                 s_match: begin
@@ -109,20 +109,16 @@ end
 
 // ================================ State Operation Logic ================================
 
-assign lru_in[0] = ~hit_way[way_deg-1];
 generate
-    genvar d;
-    for (d = 1; d < way_deg; ++d) begin : lru_depth
-        always_comb begin : lru_combine
-            for (int c = 0; c < 2**d; ++c) begin : lru_level
-                if (hit_way[(way_deg-1) -: d] == c) begin
-                    lru_in[c + 2**d - 1] = ~hit_way[way_deg-1-d];
-                end else begin
-                    lru_in[c + 2**d - 1] = lru_out[c + 2**d - 1];
-                end
-            end : lru_level
-        end : lru_combine
-    end : lru_depth
+    if (way_deg == 1) assign lru_in = ~hit_way;
+    else if (way_deg == 2) begin
+        always_comb begin
+            // 4 way
+            lru_in[0] = ~hit_way[1];
+            lru_in[1] = (hit_way[1] == 0) ? ~hit_way[0] : lru_out[1];
+            lru_in[2] = (hit_way[1] == 1) ? ~hit_way[0] : lru_out[2];
+        end
+    end else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
 endgenerate
 
 always_comb begin : state_operation_logic
