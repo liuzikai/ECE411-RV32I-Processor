@@ -27,21 +27,29 @@ logic       d_read;
 logic       d_write;
 logic       d_resp;
 
-// I-Bus-Adapter <-> I-Cache
+// I-Bus-Adapter <-> L1 I-Cache
 logic [255:0] i_rdata256;
 
-// D-Bus-Adapter <-> D-Cache
+// D-Bus-Adapter <-> L1 D-Cache
 logic [255:0] d_wdata256;
 logic [255:0] d_rdata256;
 logic [31:0]  d_byte_enable256;
 
-// I-Cache <-> Arbiter
+// L1 D-Cache <-> L2 D-Cache
+rv32i_word    d_addr_l2;
+logic [255:0] d_wdata256_l2;
+logic [255:0] d_rdata256_l2;
+logic         d_read_l2;
+logic         d_write_l2;
+logic         d_resp_l2;
+
+// L1 I-Cache <-> Arbiter
 logic i_a_read;
 logic [31:0]  i_a_addr;
 logic [255:0] i_a_rdata;
 logic i_a_resp;
 
-// D-Cache <-> Arbiter
+// L2 D-Cache <-> Arbiter
 logic d_a_write;
 logic d_a_read;
 logic [31:0]  d_a_addr;
@@ -106,7 +114,7 @@ bus_adapter d_bus_adapter (
     .mem_byte_enable256(d_byte_enable256)
 );
 
-cache #(5, 3, 2, 0) l1_d_cache(
+cache #(5, 3, 1, 0) l1_d_cache(
     .clk(clk),
     .rst(rst),
     // D-Bus-Adapter side
@@ -117,6 +125,27 @@ cache #(5, 3, 2, 0) l1_d_cache(
     .mem_read(d_read),
     .mem_write(d_write),
     .mem_resp(d_resp),
+    // L2 D-Cache side
+    .ca_wdata(d_wdata256_l2),
+    .ca_rdata(d_rdata256_l2),
+    .ca_addr(d_addr_l2),
+    .ca_resp(d_resp_l2),
+    .ca_read(d_read_l2),
+    .ca_write(d_write_l2)
+    // NOTE: no byte_enable
+);
+
+cache #(5, 3, 2, 1) l2_d_cache(
+    .clk(clk),
+    .rst(rst),
+    // L1 D-Cache side
+    .mem_addr(d_addr_l2),
+    .mem_wdata256(d_wdata256_l2),
+    .mem_rdata256(d_rdata256_l2),
+    .mem_byte_enable256(32'hFFFFFFFF),
+    .mem_read(d_read_l2),
+    .mem_write(d_write_l2),
+    .mem_resp(d_resp_l2),
     // Arbiter side
     .ca_wdata(d_a_wdata),
     .ca_rdata(d_a_rdata),
@@ -132,7 +161,7 @@ arbiter arbiter(
     .i_addr(i_a_addr),
     .i_data(i_a_rdata),
     .i_resp(i_a_resp),
-    // L1 D-Cache size
+    // L2 D-Cache size
     .d_read(d_a_read),
     .d_write(d_a_write),
     .d_addr(d_a_addr),

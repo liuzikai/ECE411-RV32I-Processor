@@ -65,7 +65,8 @@ enum logic [1:0] {
 generate
     if (resp_cycle == 0) begin
         // Use s_match only
-        always_comb begin : next_state_logic_0
+
+        always_comb begin : next_state_logic
             unique case (state)
                 s_match: begin
                     if ((mem_read | mem_write) & ~hit) begin
@@ -80,9 +81,16 @@ generate
                 default: next_state = state;
             endcase
         end
+
+        always_ff @(posedge clk) begin: next_state_assignment
+            if (rst) state <= s_match;
+            else     state <= next_state;
+        end
+        
     end else if (resp_cycle == 1) begin
         // Use both s_idle and s_match (transfer in 1 cycle)
-        always_comb begin : next_state_logic_1
+
+        always_comb begin : next_state_logic
             unique case (state)
                 s_idle: next_state = ((mem_read || mem_write) ? s_match : s_idle);
                 s_match: begin
@@ -97,15 +105,14 @@ generate
                 default: next_state = state;
             endcase
         end
+
+        always_ff @(posedge clk) begin: next_state_assignment
+            if (rst) state <= s_idle;
+            else     state <= next_state;
+        end
     end
 endgenerate
 
-
-
-always_ff @(posedge clk) begin: next_state_assignment
-    if (rst) state <= s_match;
-    else     state <= next_state;
-end
 
 // ================================ State Operation Logic ================================
 
