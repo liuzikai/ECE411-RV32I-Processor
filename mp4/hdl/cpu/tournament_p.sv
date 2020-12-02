@@ -26,7 +26,7 @@ state_t r_state, w_state, state_in;
 
 state_t state_table[s_row];
 logic [s_row_idx-1:0] r_row, w_row;
-logic g_br_take, l_br_take;
+logic g_r_br_take, l_r_br_take, g_w_br_take, l_w_br_take;
 logic g_mispred, l_mispred;
 
 assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
@@ -68,38 +68,34 @@ always_comb begin : assign_br_take
     endcase
 end
 
+always_comb begin : assign_mispred
+    mispred = 1'b0;
+    unique case(w_state)
+        sl, wl: mispred = l_mispred;
+        sg, wg: mispred = g_mispred;
+        default: ;
+    endcase
+end
+
 always_comb begin : state_in_logic
     state_in = w_state;
-    mispred = 1'b0;
     if (update) begin
         if (l_mispred ^ g_mispred) begin
             unique case(w_state)
                 sl: begin
-                    if (l_mispred) begin 
-                        state_in = wl;
-                        mispred = 1'b1;
-                    end
+                    if (l_mispred) state_in = wl;
                     else state_in = sl;
                 end
                 wl: begin
-                    if (l_mispred) begin 
-                        state_in = wg;
-                        mispred = 1'b1;
-                    end
+                    if (l_mispred) state_in = wg;
                     else state_in = sl;
                 end
                 wg: begin
-                    if (g_mispred) begin 
-                        state_in = wl;
-                        mispred = 1'b1;
-                    end
+                    if (g_mispred) state_in = wl;
                     else state_in = sg;
                 end
                 sg: begin
-                    if (g_mispred) begin 
-                        state_in = wg;
-                        mispred = 1'b1;
-                    end
+                    if (g_mispred) state_in = wg;
                     else state_in = sg;
                 end
                 default: ;

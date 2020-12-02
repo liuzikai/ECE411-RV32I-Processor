@@ -319,12 +319,12 @@ always_comb begin
             ex_load_pc = 1'b1;
         end
         3'b011: begin  // expcmux::br and mis-prediction
-            pc_in = alu_out;
+            pc_in = (br_en) ? alu_out : (pc_ex_out + 4);
             ld_pc = ~stall_ex;
             ex_load_pc = 1'b1;
         end
         default: begin
-            pc_in = (bp_enable & br_take) ? bp_pc_in : pc_out + 4;  // load for IF instruction
+            pc_in = (bp_enable & br_take) ? bp_pc_in : (pc_out + 4);  // load for IF instruction
             ld_pc = ~stall_id;
             ex_load_pc = 1'b0;
         end
