@@ -135,7 +135,7 @@ cache #(5, 3, 1, 0) l1_d_cache(
     // NOTE: no byte_enable
 );
 
-cache #(5, 3, 2, 1) l2_d_cache(
+cache #(5, 6, 2, 1) l2_d_cache(
     .clk(clk),
     .rst(rst),
     // L1 D-Cache side
