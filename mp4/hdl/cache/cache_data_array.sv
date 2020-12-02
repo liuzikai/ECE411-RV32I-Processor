@@ -29,7 +29,7 @@ input [s_index-1:0] windex;
 input [s_line-1:0] datain;
 output logic [s_line-1:0] dataout;
 
-logic [s_line-1:0] data [num_sets-1:0];
+logic [s_line-1:0] data [num_sets-1:0] /* synthesis ramstyle = "logic" */;
 
 always_ff @(posedge clk) begin
     if (rst) begin
