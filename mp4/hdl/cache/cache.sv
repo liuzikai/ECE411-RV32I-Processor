@@ -11,13 +11,13 @@ module cache #(
     input clk,
     input rst,
 
-    // cpu -> bus_adapter & cache_control & cache_datapath
+    // cpu -> cache_control & cache_datapath
     input  logic [31:0] mem_addr,
 
-    // cpu <-> bus_adapter
-    input  logic [31:0] mem_wdata,
-    output logic [31:0] mem_rdata,
-    input  logic [3:0]  mem_byte_enable,
+    // cpu <-> cache_datapath
+    input  logic [255:0] mem_wdata256,
+    output logic [255:0] mem_rdata256,
+    input  logic [31:0]  mem_byte_enable256,
 
     // cpu <-> cache_control
     input  logic mem_read,
@@ -39,11 +39,6 @@ localparam s_tag    = 32 - s_offset - s_index;
 localparam s_mask   = 2**s_offset;
 localparam s_line   = 8*s_mask;
 localparam num_sets = 2**s_index;
-
-// bus_adapter <-> cache_datapath
-logic [255:0] mem_wdata256;
-logic [255:0] mem_rdata256;
-logic [31:0]  mem_byte_enable256;
 
 // datapath -> control
 logic hit;
@@ -74,11 +69,6 @@ cache_control #(s_offset, s_index, way_deg, resp_cycle) control (
 );
 
 cache_datapath #(s_offset, s_index, way_deg, resp_cycle) datapath (
-    .*
-);
-
-bus_adapter bus_adapter (
-    .address(mem_addr),
     .*
 );
 
