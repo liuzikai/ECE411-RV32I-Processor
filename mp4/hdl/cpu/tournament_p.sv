@@ -1,9 +1,9 @@
 import rv32i_types::*;
 
 module tournament_p #(
-    parameter s_row_idx = 12,
+    parameter s_row_idx = 5,
     parameter s_row = 2**s_row_idx,
-    parameter s_pc_offset = 2,
+    parameter s_pc_offset = 2
 )
 (
     input logic clk,
@@ -16,14 +16,15 @@ module tournament_p #(
     output logic mispred
 );
 
-enum logic [1:0] {
+typedef enum logic [1:0]  {
     sl,
     wl,
     wg,
     sg
-} r_state, w_state, state_in;
+} state_t;
+state_t r_state, w_state, state_in;
 
-logic [1:0] state_table[s_row];
+state_t state_table[s_row];
 logic [s_row_idx-1:0] r_row, w_row;
 logic g_br_take, l_br_take;
 logic g_mispred, l_mispred;

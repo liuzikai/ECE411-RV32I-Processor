@@ -271,14 +271,10 @@ cmp cmp(
 );
 
 tournament_p tournament_p(
-    .clk,
-    .rst,
     .update(bp_update & ~stall_ex),
-    .br_en,
     .raddr(pc_out),
     .waddr(pc_ex_out),
-    .br_take,
-    .mispred
+    .*
 );
 
 // ================================ MUXes ================================

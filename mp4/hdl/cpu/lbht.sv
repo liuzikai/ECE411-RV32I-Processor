@@ -1,11 +1,11 @@
 import rv32i_types::*;
 
 module lbht #(
-    parameter s_bhrt_idx = 12,
+    parameter s_bhrt_idx = 5,
     parameter s_bhrt = 2**s_bhrt_idx,
     parameter s_pc_offset = 2,
     parameter s_bhr = 2,
-    parameter s_pht = 2**s_bhr,
+    parameter s_pht = 2**s_bhr
 )
 (
     input logic clk,
@@ -18,14 +18,15 @@ module lbht #(
     output logic mispred
 );
 
-enum logic [1:0] {
+typedef enum logic [1:0] {
     sn,
     wn,
     wt,
     st
-} w_state, state_in, r_state;
+} state_t;
+state_t w_state, state_in, r_state;
 
-logic [1:0] pht [s_pht];
+state_t pht [s_pht];
 logic [s_bhr-1:0] bhrt [s_bhrt];
 logic [s_bhrt_idx-1:0] r_bhrt_idx, w_bhrt_idx;
 logic [s_bhr-1:0] r_bhr, w_bhr, bhr_in;
@@ -33,7 +34,7 @@ logic [s_bhr-1:0] r_bhr, w_bhr, bhr_in;
 assign w_bhrt_idx = waddr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
 assign r_bhrt_idx = raddr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
 
-assign bhr_in = {bhr[w_bhrt_idx][s_bhr-2:0], br_en};
+assign bhr_in = {bhrt[w_bhrt_idx][s_bhr-2:0], br_en};
 assign w_bhr = bhrt[w_bhrt_idx];
 assign r_bhr = (update & (w_bhrt_idx == r_bhrt_idx)) ? bhr_in : bhrt[r_bhrt_idx];
 
@@ -93,7 +94,7 @@ always_ff @(posedge clk) begin
             pht[i] <= wn;
         end
         for (int j=0; j<s_bhrt; j=j+1) begin
-            bhrt[j] <= s_bhr{1'b0};
+            bhrt[j] <= {s_bhr{1'b0}};
         end
     end else if (update) begin
         pht[w_bhr] <= state_in;

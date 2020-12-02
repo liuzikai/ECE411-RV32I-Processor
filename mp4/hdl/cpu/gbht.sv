@@ -1,11 +1,11 @@
 import rv32i_types::*;
 
 module gbht #(
-    parameter s_row_idx = 12,
+    parameter s_row_idx = 5,
     parameter s_row = 2**s_row_idx,
     parameter s_pc_offset = 2,
     parameter s_gbhr = 5,
-    parameter s_col = 2**s_gbhr,
+    parameter s_col = 2**s_gbhr
 )
 (
     input logic clk,
@@ -18,14 +18,15 @@ module gbht #(
     output logic mispred
 );
 
-enum logic [1:0] {
+typedef enum logic [1:0] {
     sn,
     wn,
     wt,
     st
-} r_state, w_state, state_in;
+} state_t;
+state_t r_state, w_state, state_in;
 
-logic [1:0] pht [s_row][s_col];
+state_t pht [s_row][s_col];
 logic [s_gbhr-1:0] gbhr, gbhr_in;
 logic [s_row_idx-1:0] r_row, w_row;
 logic [s_gbhr-1:0] r_col, w_col;
@@ -94,7 +95,7 @@ always_ff @(posedge clk) begin
                 pht[i][j] <= wn;
             end
         end
-        gbhr <= s_gbhr{1'b0};
+        gbhr <= {s_gbhr{1'b0}};
     end else if (update) begin
         pht[w_row][w_col] <= state_in;
         gbhr <= gbhr_in;
