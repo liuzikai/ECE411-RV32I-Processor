@@ -142,7 +142,7 @@ always_comb begin : match_logic
     for (int i = 0; i < 2**way_deg; ++i) begin
         if (valid_out[i] && tag === tag_out[i]) begin
             hit = 1'b1;
-            hit_way = i;
+            hit_way = i[way_deg-1:0];
         end
     end
 
@@ -159,7 +159,7 @@ generate
             lru_way[1] = lru_out[0];
             lru_way[0] = (lru_way[1] == 0) ? lru_out[1] : lru_out[2];
         end
-    end else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
+    end // else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
 endgenerate
 
 assign lru_dirty = dirty_out[lru_way];

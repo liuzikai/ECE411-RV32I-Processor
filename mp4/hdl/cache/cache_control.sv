@@ -118,7 +118,7 @@ generate
             lru_in[1] = (hit_way[1] == 0) ? ~hit_way[0] : lru_out[1];
             lru_in[2] = (hit_way[1] == 1) ? ~hit_way[0] : lru_out[2];
         end
-    end else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
+    end // else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
 endgenerate
 
 always_comb begin : state_operation_logic

@@ -71,7 +71,7 @@ cache i_cache(
     .ca_write()
 );
 
-cache d_cache(
+cache #(5, 3, 2, 0) d_cache(
     .clk(clk),
     .rst(rst),
     .mem_addr(d_addr),
