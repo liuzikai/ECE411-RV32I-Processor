@@ -1,32 +1,48 @@
 import rv32i_types::*;
 
 module tournament_p #(
-    parameter s_pc_idx = 12,
-    parameter s_row = 2**s_pc_idx,
+    parameter s_row_idx = 12,
+    parameter s_row = 2**s_row_idx,
     parameter s_pc_offset = 2,
-    parameter s_gbhr = 5,
-    parameter s_col = 2**s_gbhr,
 )
 (
     input logic clk,
     input logic rst,
     input logic update,
     input logic br_en,
-    input rv32i_word i_addr,
-    input rv32i_word i_addr_update,
-    output logic br_take
+    input rv32i_word raddr,
+    input rv32i_word waddr,
+    output logic br_take,
+    output logic mispred
 );
 
+enum logic [1:0] {
+    sl,
+    wl,
+    wg,
+    sg
+} r_state, w_state, state_in;
+
+logic [1:0] state_table[s_row];
+logic [s_row_idx-1:0] r_row, w_row;
 logic g_br_take, l_br_take;
+logic g_mispred, l_mispred;
+
+assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
+assign r_row = raddr[s_row_idx+s_pc_offset-1:s_pc_offset];
+
+assign w_state = state_table[w_row];
+assign r_state = (update & (r_row == w_row)) ? state_in : state_table[r_row];
 
 gbht gbht(
     .clk,
     .rst,
     .update,
     .br_en,
-    .i_addr,
-    .i_addr_update,
-    .br_take(g_br_take)
+    .raddr,
+    .waddr,
+    .br_take(g_br_take),
+    .mispred(g_mispred)
 );
 
 lbht lbht(
@@ -34,9 +50,10 @@ lbht lbht(
     .rst,
     .update,
     .br_en,
-    .i_addr,
-    .i_addr_update,
-    .br_take(l_br_take)
+    .raddr,
+    .waddr,
+    .br_take(l_br_take),
+    .mispred(l_mispred)
 );
 
 
@@ -44,48 +61,59 @@ lbht lbht(
 always_comb begin : assign_br_take
     br_take = 1'b0;
     unique case(r_state)
-        sn, wn: br_take = 1'b0;
-        st, wt: br_take = 1'b1;
+        sl, wl: br_take = l_br_take;
+        sg, wg: br_take = g_br_take;
         default: ;
     endcase
 end
 
-always_comb begin : next_w_state_logic
-    next_w_state = w_state;
+always_comb begin : state_in_logic
+    state_in = w_state;
+    mispred = 1'b0;
     if (update) begin
-        unique case(w_state)
-            sn: begin
-                if (br_en) next_w_state = wn;
-                else next_w_state = sn;
-            end
-            wn: begin
-                if (br_en) next_w_state = wt;
-                else next_w_state = sn;
-            end
-            wt: begin
-                if (br_en) next_w_state = st;
-                else next_w_state = wn;
-            end
-            st: begin
-                if (br_en) next_w_state = st;
-                else next_w_state = wt;
-            end
-            default: ;
-        endcase
+        if (l_mispred ^ g_mispred) begin
+            unique case(w_state)
+                sl: begin
+                    if (l_mispred) begin 
+                        state_in = wl;
+                        mispred = 1'b1;
+                    end
+                    else state_in = sl;
+                end
+                wl: begin
+                    if (l_mispred) begin 
+                        state_in = wg;
+                        mispred = 1'b1;
+                    end
+                    else state_in = sl;
+                end
+                wg: begin
+                    if (g_mispred) begin 
+                        state_in = wl;
+                        mispred = 1'b1;
+                    end
+                    else state_in = sg;
+                end
+                sg: begin
+                    if (g_mispred) begin 
+                        state_in = wg;
+                        mispred = 1'b1;
+                    end
+                    else state_in = sg;
+                end
+                default: ;
+            endcase
+        end
     end
 end
 
 always_ff @(posedge clk) begin
     if (rst) begin
         for (int i=0; i<s_row; i=i+1) begin
-            for (int j=0; j<s_col; j=j+1) begin
-                predictors[i][j] <= wn;
-            end
+            state_table[i] <= wl;
         end
-        gbhr <= s_gbhr{1'b0};
     end else if (update) begin
-        predictors[w_row][w_col] <= next_w_state;
-        gbhr <= {gbhr[s_gbhr-2:0], br_en};
+        state_table[w_row] <= state_in;
     end
 end
 

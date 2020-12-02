@@ -41,6 +41,8 @@ module datapath(
     // WB
     input rv32i_reg regfile_rd,
     
+    // Branch Prediction Signals
+    input logic bp_update,
 
     // Stall signals
     input logic stall_id,
@@ -72,6 +74,12 @@ rv32i_word cmp_out;  // in 32 bits
 // Output of pc and chained intermediate registers
 rv32i_word pc_out, pc_id_out, pc_ex_out, pc_mem_out;
 
+// PC value for branch prediction
+rv32i_word bp_pc_in;
+
+// Signals of branch prediction
+logic br_take, mispred, bp_enable;
+
 // Output of intermediate registers
 rv32i_word regfile_in, alu_in1, alu_in2, cmp_in1, cmp_in2, alu_wb_imm_out, mwdr_ex_out;
 rv32i_word u_imm_ex_out, u_imm_mem_out, cmp_wb_imm_out, cmpmux2_out;
@@ -82,7 +90,8 @@ rv32i_word rs1_actual, rs2_actual;
 
 assign i_addr = pc_out;
 assign cmp_out = {31'b0, br_en};
-
+assign bp_pc_in = pc_out + {{20{i_rdata[31]}}, i_rdata[7], i_rdata[30:25], i_rdata[11:8], 1'b0};
+assign bp_enable = i_rdata[6:0] == op_br;
 logic ld_pc;
 
 // ================================ Registers ================================
@@ -261,28 +270,65 @@ cmp cmp(
     .f(br_en)
 );
 
+tournament_p tournament_p(
+    .clk,
+    .rst,
+    .update(bp_update & ~stall_ex),
+    .br_en,
+    .raddr(pc_out),
+    .waddr(pc_ex_out),
+    .br_take,
+    .mispred
+);
+
 // ================================ MUXes ================================
+
+// always_comb begin
+//     // expcmux
+//     unique case ({expcmux_sel, br_en})
+//         3'b100, 3'b101: begin  // expcmux::alu_out, regardless of br_en
+//             pc_in = alu_out; 
+//             ld_pc = ~stall_ex;
+//             ex_load_pc = 1'b1;
+//         end
+//         3'b110, 3'b111: begin  // expcmux::alu_mod2, regardless of br_en
+//             pc_in = {alu_out[31:1], 1'b0};
+//             ld_pc = ~stall_ex;
+//             ex_load_pc = 1'b1;
+//         end
+//         3'b011: begin  // expcmux::br and br_en
+//             pc_in = alu_out;
+//             ld_pc = ~stall_ex;
+//             ex_load_pc = 1'b1;
+//         end
+//         default: begin
+//             pc_in = pc_out + 4;  // load for IF instruction
+//             ld_pc = ~stall_id;
+//             ex_load_pc = 1'b0;
+//         end
+//     endcase
+// end
 
 always_comb begin
     // expcmux
-    unique case ({expcmux_sel, br_en})
-        3'b100, 3'b101: begin  // expcmux::alu_out, regardless of br_en
+    unique case ({expcmux_sel, mispred})
+        3'b100, 3'b101: begin  // expcmux::alu_out, regardless of mis-prediction
             pc_in = alu_out; 
             ld_pc = ~stall_ex;
             ex_load_pc = 1'b1;
         end
-        3'b110, 3'b111: begin  // expcmux::alu_mod2, regardless of br_en
+        3'b110, 3'b111: begin  // expcmux::alu_mod2, regardless of mis-prediction
             pc_in = {alu_out[31:1], 1'b0};
             ld_pc = ~stall_ex;
             ex_load_pc = 1'b1;
         end
-        3'b011: begin  // expcmux::br and br_en
+        3'b011: begin  // expcmux::br and mis-prediction
             pc_in = alu_out;
             ld_pc = ~stall_ex;
             ex_load_pc = 1'b1;
         end
         default: begin
-            pc_in = pc_out + 4;  // load for IF instruction
+            pc_in = (bp_enable & br_take) ? bp_pc_in : pc_out + 4;  // load for IF instruction
             ld_pc = ~stall_id;
             ex_load_pc = 1'b0;
         end
