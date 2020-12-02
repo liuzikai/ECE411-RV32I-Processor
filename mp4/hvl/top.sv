@@ -48,7 +48,7 @@ always_ff @(posedge itf.clk) begin : SAMPLING
     if (~dut.cpu.stall_mem) insn_mem <= insn_ex;
     if (~dut.cpu.stall_wb) insn_wb <= insn_mem;
 
-    if (~dut.cpu.stall_id) pc_wdata_id <= (dut.cpu.datapath.pc_out + 4);
+    if (~dut.cpu.stall_id) pc_wdata_id <= (dut.cpu.datapath.bp_enable & dut.cpu.datapath.br_take) ? dut.cpu.datapath.bp_pc_in : (dut.cpu.datapath.pc_out + 4);
     if (~dut.cpu.stall_ex) pc_wdata_ex <= pc_wdata_id;
     if (~dut.cpu.stall_mem) pc_wdata_mem <= (dut.cpu.datapath.ex_load_pc ? dut.cpu.datapath.pc_in : pc_wdata_ex);
     if (~dut.cpu.stall_wb) pc_wdata_wb <= pc_wdata_mem;

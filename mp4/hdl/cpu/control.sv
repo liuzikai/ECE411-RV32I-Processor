@@ -34,6 +34,9 @@ module control
     // WB
     output rv32i_reg regfile_rd,
 
+    // Branch Prediction Signals
+    output logic bp_update,
+
     // Input from memory
     input logic i_resp,
     input logic d_resp,
@@ -58,6 +61,8 @@ assign stall_ex  = stall_all;
 assign stall_mem = stall_all;
 assign stall_wb  = stall_all;
 assign stall_all = (!i_resp) || (!d_ready_next);
+
+assign bp_update = id_ex.opcode == op_br;
 
 function void set_defaults();
     // ID

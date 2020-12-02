@@ -47,6 +47,7 @@ logic ex_load_pc;
 wbdatamux::wbdatamux_sel_t wbdatamux_sel;
 
 rv32i_reg regfile_rd;
+logic bp_update;
 
 logic stall_id;
 logic stall_ex;

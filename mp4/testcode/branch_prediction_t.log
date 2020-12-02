@@ -1,0 +1,169 @@
+
+/var/folders/m7/41pr8n2n6xb_qvh8c7kb1tth0000gn/T/tmp.pRncOyLH/branch_prediction_t.s.obj:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010060 <_start>:
+   10060:	000070b3          	and	x1,x0,x0
+   10064:	00100113          	li	x2,1
+   10068:	01400193          	li	x3,20
+
+0001006c <normal_loop_test>:
+   1006c:	00308863          	beq	x1,x3,1007c <dense_take_branch_test>
+   10070:	002080b3          	add	x1,x1,x2
+   10074:	fe108ce3          	beq	x1,x1,1006c <normal_loop_test>
+   10078:	0a0000ef          	jal	x1,10118 <deadend>
+
+0001007c <dense_take_branch_test>:
+   1007c:	00308663          	beq	x1,x3,10088 <take_2>
+   10080:	098000ef          	jal	x1,10118 <deadend>
+   10084:	094000ef          	jal	x1,10118 <deadend>
+
+00010088 <take_2>:
+   10088:	00308663          	beq	x1,x3,10094 <take_3>
+   1008c:	08c000ef          	jal	x1,10118 <deadend>
+   10090:	088000ef          	jal	x1,10118 <deadend>
+
+00010094 <take_3>:
+   10094:	00308663          	beq	x1,x3,100a0 <take_4>
+   10098:	080000ef          	jal	x1,10118 <deadend>
+   1009c:	07c000ef          	jal	x1,10118 <deadend>
+
+000100a0 <take_4>:
+   100a0:	00308663          	beq	x1,x3,100ac <take_5>
+   100a4:	074000ef          	jal	x1,10118 <deadend>
+   100a8:	070000ef          	jal	x1,10118 <deadend>
+
+000100ac <take_5>:
+   100ac:	00308663          	beq	x1,x3,100b8 <take_6>
+   100b0:	068000ef          	jal	x1,10118 <deadend>
+   100b4:	064000ef          	jal	x1,10118 <deadend>
+
+000100b8 <take_6>:
+   100b8:	00308663          	beq	x1,x3,100c4 <take_7>
+   100bc:	05c000ef          	jal	x1,10118 <deadend>
+   100c0:	058000ef          	jal	x1,10118 <deadend>
+
+000100c4 <take_7>:
+   100c4:	00308263          	beq	x1,x3,100c8 <dense_not_take_branch_test>
+
+000100c8 <dense_not_take_branch_test>:
+   100c8:	04208863          	beq	x1,x2,10118 <deadend>
+   100cc:	04208663          	beq	x1,x2,10118 <deadend>
+   100d0:	04208463          	beq	x1,x2,10118 <deadend>
+   100d4:	04208263          	beq	x1,x2,10118 <deadend>
+   100d8:	04208063          	beq	x1,x2,10118 <deadend>
+   100dc:	02208e63          	beq	x1,x2,10118 <deadend>
+   100e0:	02208c63          	beq	x1,x2,10118 <deadend>
+
+000100e4 <branch_jal_alternate_test>:
+   100e4:	018000ef          	jal	x1,100fc <branch_1>
+
+000100e8 <jal_2>:
+   100e8:	018000ef          	jal	x1,10100 <branch_2>
+
+000100ec <jal_3>:
+   100ec:	018000ef          	jal	x1,10104 <branch_3>
+
+000100f0 <jal_4>:
+   100f0:	018000ef          	jal	x1,10108 <branch_4>
+
+000100f4 <jal_5>:
+   100f4:	018000ef          	jal	x1,1010c <branch_5>
+
+000100f8 <jal_6>:
+   100f8:	018000ef          	jal	x1,10110 <branch_6>
+
+000100fc <branch_1>:
+   100fc:	fe3086e3          	beq	x1,x3,100e8 <jal_2>
+
+00010100 <branch_2>:
+   10100:	fe3086e3          	beq	x1,x3,100ec <jal_3>
+
+00010104 <branch_3>:
+   10104:	fe3084e3          	beq	x1,x3,100ec <jal_3>
+
+00010108 <branch_4>:
+   10108:	fe3084e3          	beq	x1,x3,100f0 <jal_4>
+
+0001010c <branch_5>:
+   1010c:	fe3084e3          	beq	x1,x3,100f4 <jal_5>
+
+00010110 <branch_6>:
+   10110:	fe3084e3          	beq	x1,x3,100f8 <jal_6>
+
+00010114 <halt>:
+   10114:	00000063          	beqz	x0,10114 <halt>
+
+00010118 <deadend>:
+   10118:	00000417          	auipc	x8,0x0
+   1011c:	01842403          	lw	x8,24(x8) # 10130 <bad>
+
+00010120 <deadloop>:
+   10120:	00840063          	beq	x8,x8,10120 <deadloop>
+
+Disassembly of section .rodata:
+
+00010124 <testslot>:
+   10124:	0000                	unimp
+	...
+
+00010128 <testaddr>:
+   10128:	0124                	addi	x9,x2,136
+   1012a:	0001                	nop
+
+0001012c <testdata>:
+   1012c:	ef01                	bnez	x14,10144 <good+0x8>
+   1012e:	abcd                	j	10720 <good+0x5e4>
+
+00010130 <bad>:
+   10130:	deadbeef          	jal	x29,fffeb71a <__global_pointer$+0xfffd9dda>
+
+00010134 <threshold>:
+   10134:	0040                	addi	x8,x2,4
+	...
+
+00010138 <result>:
+   10138:	0000                	unimp
+	...
+
+0001013c <good>:
+   1013c:	600d                	c.lui	x0,0x3
+   1013e:	600d                	c.lui	x0,0x3
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1e41                	addi	x28,x28,-16
+   2:	0000                	unimp
+   4:	7200                	flw	f8,32(x12)
+   6:	7369                	lui	x6,0xffffa
+   8:	01007663          	bgeu	x0,x16,14 <_start-0x1004c>
+   c:	0014                	0x14
+   e:	0000                	unimp
+  10:	7205                	lui	x4,0xfffe1
+  12:	3376                	fld	f6,376(x2)
+  14:	6932                	flw	f18,12(x2)
+  16:	7032                	flw	f0,44(x2)
+  18:	5f30                	lw	x12,120(x14)
+  1a:	326d                	jal	fffff9c4 <__global_pointer$+0xfffee084>
+  1c:	3070                	fld	f12,224(x8)
+	...
+0000000 b3 70 00 00 13 01 10 00 93 01 40 01 63 88 30 00
+0000010 b3 80 20 00 e3 8c 10 fe ef 00 00 0a 63 86 30 00
+0000020 ef 00 80 09 ef 00 40 09 63 86 30 00 ef 00 c0 08
+0000030 ef 00 80 08 63 86 30 00 ef 00 00 08 ef 00 c0 07
+0000040 63 86 30 00 ef 00 40 07 ef 00 00 07 63 86 30 00
+0000050 ef 00 80 06 ef 00 40 06 63 86 30 00 ef 00 c0 05
+0000060 ef 00 80 05 63 82 30 00 63 88 20 04 63 86 20 04
+0000070 63 84 20 04 63 82 20 04 63 80 20 04 63 8e 20 02
+0000080 63 8c 20 02 ef 00 80 01 ef 00 80 01 ef 00 80 01
+0000090 ef 00 80 01 ef 00 80 01 ef 00 80 01 e3 86 30 fe
+00000a0 e3 86 30 fe e3 84 30 fe e3 84 30 fe e3 84 30 fe
+00000b0 e3 84 30 fe 63 00 00 00 17 04 00 00 03 24 84 01
+00000c0 63 00 84 00 00 00 00 00 24 01 01 00 01 ef cd ab
+00000d0 ef be ad de 40 00 00 00 00 00 00 00 0d 60 0d 60
+00000e0
+Target file /Users/liuzikai/Documents/Courses/ECE 411/0_warning_0_error/mp4/bin/../simulation/modelsim/memory.lst exists.
+Assembled ../testcode/branch_prediction_t.s and wrote memory contents to /Users/liuzikai/Documents/Courses/ECE 411/0_warning_0_error/mp4/bin/../simulation/modelsim/memory.lst
