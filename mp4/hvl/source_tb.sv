@@ -3,11 +3,13 @@
 
 `define MAGIC_MEM 0
 `define PARAM_MEM 1
-`define MEMORY `MAGIC_MEM
+`define MEMORY `PARAM_MEM
 
 // Set these to 1 to enable the feature
-`define USE_SHADOW_MEMORY 0
-`define USE_RVFI_MONITOR 0
+`define USE_SHADOW_MEMORY 1
+`define USE_RVFI_MONITOR 1
+
+`include "tb_itf.sv"
 
 module source_tb(
     tb_itf.magic_mem magic_mem_itf,
@@ -45,13 +47,16 @@ always @(rvfi.errcode iff (rvfi.errcode != 0)) begin
 end
 
 /************************** End Halting Conditions ***************************/
+`define PARAM_RESPONSE_NS 50 * 10
+`define PARAM_RESPONSE_CYCLES $ceil(`PARAM_RESPONSE_NS / `PERIOD_NS)
+`define PAGE_RESPONSE_CYCLES $ceil(`PARAM_RESPONSE_CYCLES / 2.0)
 
 generate
     if (`MEMORY == `MAGIC_MEM) begin : memory
         magic_memory_dp mem(magic_mem_itf);
     end
     else if (`MEMORY == `PARAM_MEM) begin : memory
-        ParamMemory #(50, 25, 4, 256, 512) mem(mem_itf);
+        ParamMemory #(`PARAM_RESPONSE_CYCLES, `PAGE_RESPONSE_CYCLES, 4, 256, 512) mem(mem_itf);
     end
 endgenerate
 
