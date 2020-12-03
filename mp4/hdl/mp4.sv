@@ -16,6 +16,14 @@ module mp4(
 // rv32i_word i_addr_prefetch;
 // logic i_read_prefetch;
 // logic i_resp_prefetch;
+rv32i_word    i_addr_l2;
+logic [255:0] i_rdata256_l2;
+logic         i_read_l2;
+logic         i_resp_l2;
+
+rv32i_word i_addr_l1_l2_prefetch;
+logic i_read_l1_l2_prefetch;
+logic i_resp_l1_l2_prefetch;
 // L1 prefetch <-> L2 cache
 rv32i_word d_l1_l2_addr_prefecth;
 logic d_l1_l2_read_prefecth;
@@ -104,25 +112,45 @@ cache l1_i_cache(
     .mem_resp(i_resp),
     // Arbiter side
     .ca_wdata(),
+    .ca_rdata(i_rdata256_l2),
+    .ca_addr(i_addr_l2),
+    .ca_resp(i_resp_l2),
+    .ca_read(i_read_l2),
+    .ca_write()
+);
+
+prefetch instruction_l1_l2prefetch(
+    .clk(clk),
+    .rst(rst),
+    // interface with the CPU 
+    .mem_addr_from_cpu(i_addr_l2),   
+    .mem_read_from_cpu(i_read_l2),
+    .cpu_resp(i_resp_l2),
+    // interface with the cache
+    .mem_addr_out(i_addr_l1_l2_prefetch),
+    .cache_read(i_read_l1_l2_prefetch),
+    .cache_resp(i_resp_l1_l2_prefetch)
+);
+
+cache l2_i_cache(
+    .clk(clk),
+    .rst(rst),
+    // I-Bus-Adapter side
+    .mem_addr(i_addr_l1_l2_prefetch),
+    .mem_wdata256('X),
+    .mem_rdata256(i_rdata256_l2),
+    .mem_byte_enable256(32'hFFFFFFFF),
+    .mem_read(i_read_l1_l2_prefetch),
+    .mem_write(1'b0),
+    .mem_resp(i_resp_l1_l2_prefetch),
+    // Arbiter side
+    .ca_wdata(),
     .ca_rdata(i_a_rdata),
     .ca_addr(i_a_addr),
     .ca_resp(i_a_resp),
     .ca_read(i_a_read),
     .ca_write()
 );
-
-// prefetch instruction_prefetch(
-//     .clk(clk),
-//     .rst(rst),
-//     // interface with the CPU 
-//     .mem_addr_from_cpu(i_addr),   
-//     .mem_read_from_cpu(i_read),
-//     .cpu_resp(i_resp),
-//     // interface with the cache
-//     .mem_addr_out(i_addr_prefetch),
-//     .cache_read(i_read_prefetch),
-//     .cache_resp(i_resp_prefetch)
-// );
 
 bus_adapter d_bus_adapter (
     // CPU side
