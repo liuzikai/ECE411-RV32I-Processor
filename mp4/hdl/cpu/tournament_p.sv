@@ -75,9 +75,6 @@ always_comb begin : assign_mispred
         sg, wg: mispred = g_mispred;
         default: ;
     endcase
-end
-
-always_comb begin : state_in_logic
     state_in = w_state;
     if (update) begin
         if (l_mispred ^ g_mispred) begin
