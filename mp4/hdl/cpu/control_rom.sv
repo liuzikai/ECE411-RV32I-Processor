@@ -68,6 +68,9 @@ endfunction
 
 always_comb begin
 
+    // NOTE: control_rom is connected to i_rdata even i_resp is low,
+    //       so invalid opcode, funct3, funct7 should be allowed.
+
     // Default assignments
     set_defaults();
 
@@ -100,20 +103,19 @@ always_comb begin
         op_load: begin  // load (I type)
             set_alu(alumux::rs1_out, alumux::i_imm, alu_add); 
             ctrl.d_read = 1'b1;
-            // TODO: may optimize out this mux by rearranging mux literals
             unique case(load_funct3_t'(funct3))
                 lb:  load_regfile(wbdatamux::lb);
                 lh:  load_regfile(wbdatamux::lh);
                 lw:  load_regfile(wbdatamux::lw);
                 lbu: load_regfile(wbdatamux::lbu);
                 lhu: load_regfile(wbdatamux::lhu);
-                default: ;//$fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
+                default: ;  //$fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
             unique case(load_funct3_t'(funct3))
                 lb, lbu:  ctrl.d_byte_enable = 4'b0001; 
                 lh, lhu:  ctrl.d_byte_enable = 4'b0011;
                 lw:       ctrl.d_byte_enable = 4'b1111;
-                default:;// $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
+                default:;  // $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
             ctrl.rs1 = rs1;
         end
@@ -124,13 +126,12 @@ always_comb begin
                 sb : ctrl.d_byte_enable = 4'b0001; 
                 sh : ctrl.d_byte_enable = 4'b0011;
                 sw : ctrl.d_byte_enable = 4'b1111;
-                default:;// $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
+                default:;  // $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
             endcase
             ctrl.rs1 = rs1;
             ctrl.rs2 = rs2;
         end
         op_imm: begin  // arith ops with register/immediate operands (I type)
-            // TODO: these nested muxes may be too long
             unique case (arith_funct3_t'(funct3))
                 slt: begin
                     set_cmp(cmpmux::i_imm, blt);
@@ -141,7 +142,7 @@ always_comb begin
                     load_regfile(wbdatamux::br_en);
                 end
                 sr: begin
-                    if (funct7 == 7'b0100000) begin  // if this is SRA
+                    if (funct7[5] == 1'b1) begin  // if this is SRA
                         set_alu(alumux::rs1_out, alumux::i_imm, alu_sra);
                         load_regfile(wbdatamux::alu_out);
                     end else begin
@@ -157,10 +158,9 @@ always_comb begin
             ctrl.rs1 = rs1;
         end
         op_reg: begin  // arith ops with register operands (R type)
-            // TODO: these nested muxes may be too long
             unique case (arith_funct3_t'(funct3))
                 add: begin
-                    if (funct7 == 7'b0100000) begin  // sub
+                    if (funct7[5] == 1'b1) begin  // sub
                         set_alu(alumux::rs1_out, alumux::rs2_out, alu_sub);
                         load_regfile(wbdatamux::alu_out);
                     end else begin  // add
@@ -169,7 +169,7 @@ always_comb begin
                     end
                 end
                 sr: begin
-                    if (funct7 == 7'b0100000) begin  // arithmetic
+                    if (funct7[5] == 1'b1) begin  // arithmetic
                         set_alu(alumux::rs1_out, alumux::rs2_out, alu_sra);
                         load_regfile(wbdatamux::alu_out);
                     end else begin  // logic

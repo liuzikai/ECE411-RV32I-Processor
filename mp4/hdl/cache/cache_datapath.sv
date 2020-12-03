@@ -109,15 +109,27 @@ generate
             .dataout(dirty_out[i])
         );
 
-        cache_data_array #(s_offset, s_index) data_array (
-            .clk(clk),
-            .rst(rst),
-            .write_en(data_write_en[i]),
-            .rindex(set_index),
-            .windex(set_index),
-            .datain(data_in),
-            .dataout(data_out[i])
-        );
+        if (resp_cycle == 0) begin
+            logic_data_array #(s_offset, s_index) data_array (
+                .clk(clk),
+                .rst(rst),
+                .write_en(data_write_en[i]),
+                .rindex(set_index),
+                .windex(set_index),
+                .datain(data_in),
+                .dataout(data_out[i])
+            );
+        end else begin
+            bram_data_array #(s_offset, s_index) data_array (
+                .clk(clk),
+                // No rst
+                // No byte_enable support for bram_data_array, always load the whole cacheline
+                .load(load_data[i]),
+                .index(set_index),
+                .datain(data_in),
+                .dataout(data_out[i])
+            );
+        end
     end 
 endgenerate
 
@@ -157,9 +169,21 @@ generate
         always_comb begin
             // 4 way, LRU tree to LRU way index
             lru_way[1] = lru_out[0];
-            lru_way[0] = (lru_way[1] == 0) ? lru_out[1] : lru_out[2];
+            lru_way[0] = (lru_way[1] == 1'b0) ? lru_out[1] : lru_out[2];
         end
-    end // else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
+    end else if (way_deg == 3) begin
+        always_comb begin
+            // 8 way, LRU tree to LRU way index
+            lru_way[2] = lru_out[0];
+            lru_way[1] = (lru_way[2] == 1'b0) ? lru_out[1] : lru_out[2];
+            unique case (lru_way[2:1])
+                2'b00: lru_way[0] = lru_out[3];
+                2'b01: lru_way[0] = lru_out[4];
+                2'b10: lru_way[0] = lru_out[5];
+                2'b11: lru_way[0] = lru_out[6];
+            endcase
+        end
+    end
 endgenerate
 
 assign lru_dirty = dirty_out[lru_way];

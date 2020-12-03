@@ -2,10 +2,9 @@
    data arrays. This module supports a write mask to
    help you update the values in the array. */
 
-module cache_data_array #(
+module logic_data_array #(
     parameter s_offset = 5,
-    parameter s_index = 3,
-    parameter resp_cycle = 0
+    parameter s_index = 3
 )
 (
     clk,
@@ -42,16 +41,8 @@ always_ff @(posedge clk) begin
     end
 end
 
-generate
-    if (resp_cycle == 0) begin
-        always_comb begin
-            dataout = data[rindex];
-        end 
-    end else begin
-        always_ff @(posedge clk) begin
-            dataout <= data[rindex];
-        end
-    end
-endgenerate
+always_comb begin
+    dataout = data[rindex];
+end 
 
-endmodule : cache_data_array
+endmodule : logic_data_array

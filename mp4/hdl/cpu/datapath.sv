@@ -279,32 +279,6 @@ tournament_p tournament_p(
 
 // ================================ MUXes ================================
 
-// always_comb begin
-//     // expcmux
-//     unique case ({expcmux_sel, br_en})
-//         3'b100, 3'b101: begin  // expcmux::alu_out, regardless of br_en
-//             pc_in = alu_out; 
-//             ld_pc = ~stall_ex;
-//             ex_load_pc = 1'b1;
-//         end
-//         3'b110, 3'b111: begin  // expcmux::alu_mod2, regardless of br_en
-//             pc_in = {alu_out[31:1], 1'b0};
-//             ld_pc = ~stall_ex;
-//             ex_load_pc = 1'b1;
-//         end
-//         3'b011: begin  // expcmux::br and br_en
-//             pc_in = alu_out;
-//             ld_pc = ~stall_ex;
-//             ex_load_pc = 1'b1;
-//         end
-//         default: begin
-//             pc_in = pc_out + 4;  // load for IF instruction
-//             ld_pc = ~stall_id;
-//             ex_load_pc = 1'b0;
-//         end
-//     endcase
-// end
-
 always_comb begin
     // expcmux
     unique case ({expcmux_sel, mispred})
