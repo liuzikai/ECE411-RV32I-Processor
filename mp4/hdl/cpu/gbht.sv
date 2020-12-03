@@ -35,22 +35,10 @@ assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
 assign r_row = raddr[s_row_idx+s_pc_offset-1:s_pc_offset];
 
 assign gbhr_in = {gbhr[s_gbhr-2:0], br_en};
-assign w_col = gbhr;
-assign r_col = (update) ? gbhr_in : gbhr;
-
-assign w_state = pht[w_row][w_col];
-assign r_state = (update & (r_row == w_row) & (r_col == w_col)) ? state_in : pht[r_row][r_col];
-
-always_comb begin : assign_br_take
-    br_take = 1'b0;
-    unique case(r_state)
-        sn, wn: br_take = 1'b0;
-        st, wt: br_take = 1'b1;
-        default: ;
-    endcase
-end
 
 always_comb begin : state_in_logic
+    w_col = gbhr;
+    w_state = pht[w_row][w_col];
     state_in = w_state;
     mispred = 1'b0;
     if (update) begin
@@ -86,6 +74,14 @@ always_comb begin : state_in_logic
             default: ;
         endcase
     end
+    r_col = (update) ? gbhr_in : gbhr;
+    r_state = (update & (r_row == w_row) & (r_col == w_col)) ? state_in : pht[r_row][r_col];
+    br_take = 1'b0;
+    unique case(r_state)
+        sn, wn: br_take = 1'b0;
+        st, wt: br_take = 1'b1;
+        default: ;
+    endcase
 end
 
 always_ff @(posedge clk) begin

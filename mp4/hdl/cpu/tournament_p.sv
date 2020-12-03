@@ -32,8 +32,8 @@ logic g_mispred, l_mispred;
 assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
 assign r_row = raddr[s_row_idx+s_pc_offset-1:s_pc_offset];
 
-assign w_state = state_table[w_row];
-assign r_state = (update & (r_row == w_row)) ? state_in : state_table[r_row];
+assign 
+assign 
 
 gbht gbht(
     .clk,
@@ -57,18 +57,8 @@ lbht lbht(
     .mispred(l_mispred)
 );
 
-
-
-always_comb begin : assign_br_take
-    br_take = 1'b0;
-    unique case(r_state)
-        sl, wl: br_take = l_br_take;
-        sg, wg: br_take = g_br_take;
-        default: ;
-    endcase
-end
-
 always_comb begin : assign_mispred
+    w_state = state_table[w_row];
     mispred = 1'b0;
     unique case(w_state)
         sl, wl: mispred = l_mispred;
@@ -99,6 +89,13 @@ always_comb begin : assign_mispred
             endcase
         end
     end
+    r_state = (update & (r_row == w_row)) ? state_in : state_table[r_row];
+    br_take = 1'b0;
+    unique case(r_state)
+        sl, wl: br_take = l_br_take;
+        sg, wg: br_take = g_br_take;
+        default: ;
+    endcase
 end
 
 always_ff @(posedge clk) begin

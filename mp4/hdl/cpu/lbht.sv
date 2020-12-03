@@ -34,23 +34,9 @@ logic [s_bhr-1:0] r_bhr, w_bhr, bhr_in;
 assign w_bhrt_idx = waddr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
 assign r_bhrt_idx = raddr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
 
-assign bhr_in = {bhrt[w_bhrt_idx][s_bhr-2:0], br_en};
-assign w_bhr = bhrt[w_bhrt_idx];
-assign r_bhr = (update & (w_bhrt_idx == r_bhrt_idx)) ? bhr_in : bhrt[r_bhrt_idx];
-
-assign w_state = pht[w_bhr];
-assign r_state = (update & (w_bhr == r_bhr)) ? state_in : pht[r_bhr];
-
-always_comb begin : assign_br_take
-    br_take = 1'b0;
-    unique case(r_state)
-        sn, wn: br_take = 1'b0;
-        st, wt: br_take = 1'b1;
-        default: ;
-    endcase
-end
-
-always_comb begin : state_in_logic
+always_comb begin
+    w_bhr = bhrt[w_bhrt_idx];
+    w_state = pht[w_bhr];
     state_in = w_state;
     mispred = 1'b0;
     if (update) begin
@@ -86,6 +72,15 @@ always_comb begin : state_in_logic
             default: ;
         endcase
     end
+    bhr_in = {bhrt[w_bhrt_idx][s_bhr-2:0], br_en};
+    r_bhr = (update & (w_bhrt_idx == r_bhrt_idx)) ? bhr_in : bhrt[r_bhrt_idx];
+    r_state = (update & (w_bhr == r_bhr)) ? state_in : pht[r_bhr];
+    br_take = 1'b0;
+    unique case(r_state)
+        sn, wn: br_take = 1'b0;
+        st, wt: br_take = 1'b1;
+        default: ;
+    endcase
 end
 
 always_ff @(posedge clk) begin
