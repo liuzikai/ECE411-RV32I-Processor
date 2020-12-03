@@ -32,8 +32,8 @@ logic g_mispred, l_mispred;
 assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
 assign r_row = raddr[s_row_idx+s_pc_offset-1:s_pc_offset];
 
-assign 
-assign 
+// assign 
+// assign 
 
 gbht gbht(
     .clk,
