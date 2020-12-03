@@ -101,7 +101,7 @@ generate
                     end
                 end
                 s_writeback: next_state = (ca_resp ? s_load : s_writeback);
-                s_load:      next_state = (ca_resp ? s_match : s_load);
+                s_load:      next_state = (ca_resp ? s_idle : s_load);
                 default: next_state = state;
             endcase
         end

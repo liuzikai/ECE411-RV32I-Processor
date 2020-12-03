@@ -1,7 +1,6 @@
-module cache_array #(
+module logic_array #(
     parameter s_index = 3,
-    parameter width = 1,
-    parameter resp_cycle = 0
+    parameter width = 1
 )
 (
     clk,
@@ -33,16 +32,8 @@ always_ff @(posedge clk) begin
     end
 end
 
-generate
-    if (resp_cycle == 0) begin
-        always_comb begin
-            dataout = data[rindex];
-        end 
-    end else begin
-        always_ff @(posedge clk) begin
-            dataout <= data[rindex];
-        end
-    end
-endgenerate
+always_comb begin
+    dataout = data[rindex];
+end 
 
-endmodule : cache_array
+endmodule : logic_array

@@ -79,17 +79,30 @@ generate
 
         // Arrays will be reset to all 0 with rst
 
-        cache_array #(s_index, s_tag) tag_array (
-            .clk(clk),
-            .rst(rst),
-            .load(load_tag[i]),
-            .rindex(set_index),
-            .windex(set_index),
-            .datain(tag),
-            .dataout(tag_out[i])
-        );
+        if (resp_cycle == 0) begin
+            logic_array #(s_index, s_tag) tag_array (
+                .clk(clk),
+                .rst(rst),
+                .load(load_tag[i]),
+                .rindex(set_index),
+                .windex(set_index),
+                .datain(tag),
+                .dataout(tag_out[i])
+            );
+        end else begin
+            bram_array #(s_index, s_tag) tag_array (
+                .clk(clk),
+                // No rst
+                .load(load_tag[i]),
+                // Common index
+                .index(set_index),
+                .datain(tag),
+                .dataout(tag_out[i])
+            );
+        end
 
-        cache_array #(s_index, 1) valid_array (
+        // Must use logic array due to reset requirement
+        logic_array #(s_index, 1) valid_array (
             .clk(clk),
             .rst(rst),
             .load(set_valid[i]),
@@ -99,7 +112,8 @@ generate
             .dataout(valid_out[i])
         );
 
-        cache_array #(s_index, 1) dirty_array (
+        // Must use logic array due to reset requirement
+        logic_array #(s_index, 1) dirty_array (
             .clk(clk),
             .rst(rst),
             .load(load_dirty[i]),
@@ -120,10 +134,10 @@ generate
                 .dataout(data_out[i])
             );
         end else begin
-            bram_data_array #(s_offset, s_index) data_array (
+            bram_array #(s_index, 8*(2**s_offset)) data_array (
                 .clk(clk),
                 // No rst
-                // No byte_enable support for bram_data_array, always load the whole cacheline
+                // No byte_enable support for bram_array, always load the whole cacheline
                 .load(load_data[i]),
                 .index(set_index),
                 .datain(data_in),
@@ -133,7 +147,8 @@ generate
     end 
 endgenerate
 
-cache_array #(s_index, 2**way_deg-1) lru_array (
+// Must use logic array due to reset requirement
+logic_array #(s_index, 2**way_deg-1) lru_array (
     .clk(clk),
     .rst(rst),
     .load(load_lru),
@@ -191,7 +206,7 @@ assign lru_dirty = dirty_out[lru_way];
 
 // ================================ Muxes ================================
 
-always_comb begin : muxes
+always_comb begin
 
     // Data array input mux
     unique case (datamux_sel)
@@ -199,22 +214,30 @@ always_comb begin : muxes
         datamux::ca_rdata: data_in = ca_rdata;
         default: data_in = {s_line{1'bX}};
     endcase
+end
 
-    // Load data control
-    for (int i = 0; i < way_count; ++i) begin
-        unique case ({load_data[i], datamux_sel})
-            2'b10: data_write_en[i] = mem_byte_enable256;  // write only the enabled bytes
-            2'b11: data_write_en[i] = {32{1'b1}};  // read the full cache line
-            default: data_write_en[i] = {32{1'b0}};
-        endcase
-    end
+generate
+    if (resp_cycle == 0) begin
+        always_comb begin
+            // Load data control
+            for (int i = 0; i < way_count; ++i) begin
+                unique case ({load_data[i], datamux_sel})
+                    2'b10: data_write_en[i] = mem_byte_enable256;  // write only the enabled bytes
+                    2'b11: data_write_en[i] = {32{1'b1}};  // read the full cache line
+                    default: data_write_en[i] = {32{1'b0}};
+                endcase
+            end
+        end
+    end // Otherwise, mem_byte_enable256 must be always all 1's
+endgenerate
 
-    // Upstream data output
-    mem_rdata256 = data_out[hit_way];  // set anyway, won't take effect unless mem_resp
+// Upstream data output
+assign mem_rdata256 = data_out[hit_way];  // set anyway, won't take effect unless mem_resp
     
-    // Downstream data output
-    ca_wdata = data_out[lru_way];
+// Downstream data output
+assign ca_wdata = data_out[lru_way];
 
+always_comb begin
     // Address output to cacheline adapter
     // Align mem_addr to 32 bytes and pass to cacheline adapter
     unique case (addrmux_sel)
@@ -222,7 +245,6 @@ always_comb begin : muxes
         addrmux::tag_addr: ca_addr = {tag_out[lru_way], set_index, 5'b00000};
         default: ca_addr = {32'b0};
     endcase
-
-end : muxes
+end
     
 endmodule : cache_datapath
