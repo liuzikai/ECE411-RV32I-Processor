@@ -107,13 +107,13 @@ always_comb begin
                 lw:  load_regfile(wbdatamux::lw);
                 lbu: load_regfile(wbdatamux::lbu);
                 lhu: load_regfile(wbdatamux::lhu);
-                default:;// $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
+                default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
             unique case(load_funct3_t'(funct3))
                 lb, lbu:  ctrl.d_byte_enable = 4'b0001; 
                 lh, lhu:  ctrl.d_byte_enable = 4'b0011;
                 lw:       ctrl.d_byte_enable = 4'b1111;
-                default:;// $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
+                default: $fatal("%0t %s %0d: Illegal load_funct3", $time, `__FILE__, `__LINE__);
             endcase
             ctrl.rs1 = rs1;
         end
@@ -124,7 +124,7 @@ always_comb begin
                 sb : ctrl.d_byte_enable = 4'b0001; 
                 sh : ctrl.d_byte_enable = 4'b0011;
                 sw : ctrl.d_byte_enable = 4'b1111;
-                default:;// $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
+                default: $fatal("%0t %s %0d: Illegal store_funct3", $time, `__FILE__, `__LINE__);
             endcase
             ctrl.rs1 = rs1;
             ctrl.rs2 = rs2;
