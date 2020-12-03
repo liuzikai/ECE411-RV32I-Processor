@@ -66,9 +66,9 @@ always_comb begin : state_actions
       if (pmem_resp) begin
         tag_load = 1'b1;
         valid_load = 1'b1;
+      end
         dirty_load = 1'b1;
         dirty_in = 1'b0;
-      end
     end
 
 	endcase

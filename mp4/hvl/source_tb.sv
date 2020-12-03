@@ -9,6 +9,8 @@
 `define USE_SHADOW_MEMORY 1
 `define USE_RVFI_MONITOR 1
 
+`include "tb_itf.sv"
+
 module source_tb(
     tb_itf.magic_mem magic_mem_itf,
     tb_itf.mem mem_itf,
@@ -45,13 +47,16 @@ always @(rvfi.errcode iff (rvfi.errcode != 0)) begin
 end
 
 /************************** End Halting Conditions ***************************/
+`define PARAM_RESPONSE_NS 50 * 10
+`define PARAM_RESPONSE_CYCLES $ceil(`PARAM_RESPONSE_NS / `PERIOD_NS)
+`define PAGE_RESPONSE_CYCLES $ceil(`PARAM_RESPONSE_CYCLES / 2.0)
 
 generate
     if (`MEMORY == `MAGIC_MEM) begin : memory
         magic_memory_dp mem(magic_mem_itf);
     end
     else if (`MEMORY == `PARAM_MEM) begin : memory
-        ParamMemory #(100, 50, 4, 256, 512) mem(mem_itf);
+        ParamMemory #(`PARAM_RESPONSE_CYCLES, `PAGE_RESPONSE_CYCLES, 4, 256, 512) mem(mem_itf);
     end
 endgenerate
 
@@ -74,10 +79,10 @@ generate
             .rvfi_mode(2'b00),
             .rvfi_rs1_addr(rvfi.rs1_addr),
             .rvfi_rs2_addr(rvfi.rs2_addr),
-            .rvfi_rs1_rdata(rvfi.rs1_addr ? rvfi.rs1_rdata : 32'b0),
-            .rvfi_rs2_rdata(rvfi.rs2_addr ? rvfi.rs2_rdata : 32'b0),
-            .rvfi_rd_addr(rvfi.load_regfile ? rvfi.rd_addr : 5'b0),
-            .rvfi_rd_wdata(rvfi.load_regfile ? rvfi.rd_wdata : 32'b0),
+            .rvfi_rs1_rdata(rvfi.rs1_addr ? rvfi.rs1_rdata : 0),
+            .rvfi_rs2_rdata(rvfi.rs2_addr ? rvfi.rs2_rdata : 0),
+            .rvfi_rd_addr(rvfi.load_regfile ? rvfi.rd_addr : 0),
+            .rvfi_rd_wdata(rvfi.load_regfile ? rvfi.rd_wdata : 0),
             .rvfi_pc_rdata(rvfi.pc_rdata),
             .rvfi_pc_wdata(rvfi.pc_wdata),
             .rvfi_mem_addr({rvfi.mem_addr[31:2], 2'b0}),
