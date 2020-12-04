@@ -272,8 +272,7 @@ cmp cmp(
 
 tournament_p tournament_p(
     .update(bp_update & ~stall_ex),
-    .raddr(pc_out),
-    .waddr(pc_ex_out),
+    .addr(pc_out),
     .*
 );
 

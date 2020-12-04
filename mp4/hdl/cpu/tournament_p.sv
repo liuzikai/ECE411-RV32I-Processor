@@ -8,10 +8,11 @@ module tournament_p #(
 (
     input logic clk,
     input logic rst,
+    input logic stall_id,
+    input logic stall_ex,
     input logic update,
     input logic br_en,
-    input rv32i_word raddr,
-    input rv32i_word waddr,
+    input rv32i_word addr,
     output logic br_take,
     output logic mispred
 );
@@ -22,53 +23,54 @@ typedef enum logic [1:0]  {
     wg,
     sg
 } state_t;
-state_t r_state, w_state, state_in;
+
+typedef struct packed {
+    logic [s_row_idx-1:0] row;
+    state_t state;
+    logic br_take;
+} state_pkg_t;
+
+state_t state_in;
 
 state_t state_table[s_row];
-logic [s_row_idx-1:0] r_row, w_row;
 logic g_br_take, l_br_take;
 logic g_mispred, l_mispred;
+state_pkg_t state_pkg_if, state_pkg_id, state_pkg_ex;
 
-assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
-assign r_row = raddr[s_row_idx+s_pc_offset-1:s_pc_offset];
-
-assign 
-assign 
+always_comb begin
+    state_pkg_if.row = addr[s_row_idx+s_pc_offset-1:s_pc_offset];
+    state_pkg_if.state = (update & (state_pkg_if.row == state_pkg_ex.row)) ? state_in : state_table[state_pkg_if.row];
+    state_pkg_if.br_take = 1'b0;
+    unique case(r_state)
+        sl, wl: state_pkg_if.br_take = l_br_take;
+        sg, wg: state_pkg_if.br_take = g_br_take;
+        default: ;
+    endcase
+end
 
 gbht gbht(
-    .clk,
-    .rst,
-    .update,
-    .br_en,
-    .raddr,
-    .waddr,
     .br_take(g_br_take),
-    .mispred(g_mispred)
+    .mispred(g_mispred),
+    .*
 );
 
 lbht lbht(
-    .clk,
-    .rst,
-    .update,
-    .br_en,
-    .raddr,
-    .waddr,
     .br_take(l_br_take),
-    .mispred(l_mispred)
+    .mispred(l_mispred),
+    .*
 );
 
 always_comb begin : assign_mispred
-    w_state = state_table[w_row];
     mispred = 1'b0;
-    unique case(w_state)
+    unique case(state_pkg_ex.state)
         sl, wl: mispred = l_mispred;
         sg, wg: mispred = g_mispred;
         default: ;
     endcase
-    state_in = w_state;
+    state_in = state_pkg_ex.state;
     if (update) begin
         if (l_mispred ^ g_mispred) begin
-            unique case(w_state)
+            unique case(state_pkg_ex.state)
                 sl: begin
                     if (l_mispred) state_in = wl;
                     else state_in = sl;
@@ -89,13 +91,6 @@ always_comb begin : assign_mispred
             endcase
         end
     end
-    r_state = (update & (r_row == w_row)) ? state_in : state_table[r_row];
-    br_take = 1'b0;
-    unique case(r_state)
-        sl, wl: br_take = l_br_take;
-        sg, wg: br_take = g_br_take;
-        default: ;
-    endcase
 end
 
 always_ff @(posedge clk) begin
@@ -104,8 +99,13 @@ always_ff @(posedge clk) begin
             state_table[i] <= wl;
         end
     end else if (update) begin
-        state_table[w_row] <= state_in;
+        state_table[state_pkg_ex.row] <= state_in;
     end
+end
+
+always_ff @(posedge clk) begin
+    state_pkg_id <= (stall_id) ? state_pkg_id : state_pkg_if;
+    state_pkg_ex <= (stall_ex) ? state_pkg_ex : state_pkg_id;
 end
 
 endmodule : tournament_p
