@@ -82,6 +82,16 @@ rv32i_word    i_addr_l2_down;
 logic         i_read_l2_down;
 logic         i_resp_l2_down;
 
+// prefetch <-> L1 I-Cache
+rv32i_word    d_addr_prefetch_up;
+logic         d_read_prefetch_up;
+logic         d_resp_prefetch_up;
+
+// prefetch <-> L2 I-Cache
+rv32i_word    d_addr_prefetch_down;
+logic         d_read_prefetch_down;
+logic         d_resp_prefetch_down;
+
 // L1 D-Cache <-> L2 D-Cache OR memory
 rv32i_word    d_addr_l1_down;
 logic [255:0] d_wdata256_l1_down;
@@ -184,12 +194,12 @@ generate
 
         // If we use L2 cache
         always_comb begin
-            d_addr_l2_up       = d_addr_l1_down;
+            // d_addr_l2_up       = d_addr_l1_down;
             d_wdata256_l2_up   = d_wdata256_l1_down;
             d_rdata256_l1_down = d_rdata256_l2_up;
-            d_read_l2_up       = d_read_l1_down;
+            // d_read_l2_up       = d_read_l1_down;
             d_write_l2_up      = d_write_l1_down;
-            d_resp_l1_down     = d_resp_l2_up;
+            // d_resp_l1_down     = d_resp_l2_up;
 
             d_a_addr           = d_addr_l2_down;
             d_a_wdata          = d_wdata256_l2_down;
@@ -199,6 +209,28 @@ generate
             d_resp_l2_down     = d_a_resp;
         end
 
+        if (use_d_prefetcher) begin
+
+            // If we use the prefetch for data between L1 and L2
+            always_comb begin
+                d_addr_prefetch_up   = d_addr_l1_down;
+                d_read_prefetch_up   = d_read_l1_down;
+                d_resp_l1_down       = d_resp_prefetch_up;
+                d_addr_l2_up         = d_addr_prefetch_down;
+                d_read_l2_up         = d_read_prefetch_down;
+                d_resp_prefetch_down = d_resp_l2_up;
+            end
+
+        end else begin
+
+            // If we don't use the prefetch for data between L1 and L2
+            always_comb begin
+                d_addr_l2_up    = d_addr_l1_down;
+                d_read_l2_up    = d_read_l1_down;
+                d_resp_l1_down  = d_resp_l2_up;
+            end
+
+        end
     end else begin
 
         // If we don't use L2 data cache
@@ -323,6 +355,23 @@ cache #(5, l1_d_cache_s_index, 1, 0) l1_d_cache(
     .ca_write(d_write_l1_down)
     // NOTE: no byte_enable
 );
+
+generate
+    if (use_d_prefetcher) begin
+        prefetch instruction_l1_l2_prefetch (
+            .clk(clk),
+            .rst(rst),
+            // interface with the CPU 
+            .mem_addr_from_cpu(d_addr_prefetch_up),   
+            .mem_read_from_cpu(d_read_prefetch_up),
+            .cpu_resp(d_resp_prefetch_up),
+            // upterface with the cache
+            .mem_addr_out(d_addr_prefetch_down),
+            .cache_read(d_read_prefetch_down),
+            .cache_resp(d_resp_prefetch_down)
+        );
+    end
+endgenerate
 
 generate
     if (use_l2_d_cache) begin
