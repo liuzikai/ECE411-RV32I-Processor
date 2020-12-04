@@ -5,6 +5,7 @@ module mp4_tb;
 // Instantiate Interfaces
 tb_itf itf();
 rvfi_itf rvfi(itf.clk, itf.rst);
+perf_cnt_itf perf_cnt(itf.clk, itf.rst);
 
 // Instantiate Testbench
 source_tb tb(
@@ -22,8 +23,6 @@ bit f;
 /****************************** End do not touch *****************************/
 
 /************************ Signals necessary for monitor **********************/
-// This section not required until CP2
-
 rv32i_types::rv32i_word pc_wb;
 rv32i_types::rv32i_word rs1_rdata_ex, rs1_rdata_mem, rs1_rdata_wb;
 rv32i_types::rv32i_word rs2_rdata_ex, rs2_rdata_mem, rs2_rdata_wb;
@@ -48,7 +47,7 @@ always_ff @(posedge itf.clk) begin : SAMPLING
     if (~dut.cpu.stall_mem) insn_mem <= insn_ex;
     if (~dut.cpu.stall_wb) insn_wb <= insn_mem;
 
-    if (~dut.cpu.stall_id) pc_wdata_id <= (dut.cpu.datapath.bp_enable & dut.cpu.datapath.br_take) ? dut.cpu.datapath.bp_pc_in : (dut.cpu.datapath.pc_out + 4);
+    if (~dut.cpu.stall_id) pc_wdata_id <= dut.cpu.datapath.pc_in;
     if (~dut.cpu.stall_ex) pc_wdata_ex <= pc_wdata_id;
     if (~dut.cpu.stall_mem) pc_wdata_mem <= (dut.cpu.datapath.ex_load_pc ? dut.cpu.datapath.pc_in : pc_wdata_ex);
     if (~dut.cpu.stall_wb) pc_wdata_wb <= pc_wdata_mem;
@@ -61,7 +60,8 @@ always_ff @(posedge itf.clk) begin : SAMPLING
 end
 
 assign rvfi.commit = (dut.cpu.control.mem_wb.opcode != rv32i_types::op_none) && ~dut.cpu.stall_wb; // Set high when a valid instruction is modifying regfile or PC
-assign rvfi.halt = (rvfi.commit && insn_wb === 32'h00000063);   // Set high when you detect an infinite loop
+// assign rvfi.halt = (rvfi.commit && rvfi.pc_rdata === rvfi.pc_wdata);
+assign rvfi.halt = 1'b0;  // let performance counter $finish
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 
@@ -111,8 +111,49 @@ assign itf.data_rdata = dut.d_rdata;
 
 /*********************** End Shadow Memory Assignments ***********************/
 
+/*************************** Assign Registers Here ***************************/
+
 // Set this to the proper value
 assign itf.registers = dut.cpu.datapath.regfile.data;
+
+/************************** End Register Assignments *************************/
+
+/****************** Assign Performance Counter Signals Here ******************/
+
+assign perf_cnt.halt = (rvfi.commit && rvfi.pc_rdata === rvfi.pc_wdata);
+assign perf_cnt.commit = rvfi.commit;
+
+assign perf_cnt.pipeline_stall_id = dut.cpu.datapath.stall_id;
+assign perf_cnt.pipeline_stall_ex = dut.cpu.datapath.stall_ex;
+assign perf_cnt.pipeline_stall_waiting_i = dut.cpu.control.stall_all && ~dut.cpu.control.i_resp;
+assign perf_cnt.pipeline_stall_waiting_d = dut.cpu.control.stall_all && dut.cpu.control.i_resp;
+assign perf_cnt.pipeline_flush = dut.cpu.datapath.ex_load_pc;
+
+assign perf_cnt.pipeline_ex_opcode = dut.cpu.control.id_ex.opcode;
+assign perf_cnt.mispred = dut.cpu.datapath.mispred;
+
+assign perf_cnt.l1_i_cache_read = dut.i_read;
+assign perf_cnt.l1_i_cache_resp = dut.i_resp;
+
+assign perf_cnt.l2_i_cache_read = dut.i_read_l1_l2_prefetch;
+assign perf_cnt.l2_i_cache_read_from_l1 = dut.i_read_l2;
+assign perf_cnt.l2_i_cache_resp = dut.i_resp_l1_l2_prefetch;
+
+assign perf_cnt.l1_d_cache_read = dut.d_read;
+assign perf_cnt.l1_d_cache_write = dut.d_write;
+assign perf_cnt.l1_d_cache_resp = dut.d_resp;
+
+assign perf_cnt.l2_d_cache_read = dut.d_read_l2;
+assign perf_cnt.l2_d_cache_read_from_l1 = dut.d_read_l2;
+assign perf_cnt.l2_d_cache_write = dut.d_write_l2;
+assign perf_cnt.l2_d_cache_write_from_l1 = dut.d_write_l2;
+assign perf_cnt.l2_d_cache_resp = dut.d_resp_l2;
+
+performance_counter performance_counter(
+    .itf(perf_cnt)
+);
+
+/******************* End Performance Counter Assignments *********************/
 
 /*********************** Instantiate your design here ************************/
 

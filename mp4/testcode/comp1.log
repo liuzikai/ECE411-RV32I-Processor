@@ -1,0 +1,304 @@
+
+/var/folders/m7/41pr8n2n6xb_qvh8c7kb1tth0000gn/T/tmp.MGPr4g5O/comp1.s.obj:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010054 <_start>:
+   10054:	84000137          	lui	x2,0x84000
+   10058:	ff010113          	addi	x2,x2,-16 # 83fffff0 <__global_pointer$+0x83fee47c>
+   1005c:	00112623          	sw	x1,12(x2)
+   10060:	00812423          	sw	x8,8(x2)
+   10064:	01a12223          	sw	x26,4(x2)
+   10068:	deffed37          	lui	x26,0xdeffe
+   1006c:	effd0d13          	addi	x26,x26,-257 # deffdeff <__global_pointer$+0xdefec38b>
+   10070:	00000097          	auipc	x1,0x0
+   10074:	128080e7          	jalr	296(x1) # 10198 <test_uncorrelated_branches>
+   10078:	00050413          	mv	x8,x10
+   1007c:	00000097          	auipc	x1,0x0
+   10080:	174080e7          	jalr	372(x1) # 101f0 <test_correlated_branches>
+   10084:	00a46433          	or	x8,x8,x10
+   10088:	00000097          	auipc	x1,0x0
+   1008c:	1d8080e7          	jalr	472(x1) # 10260 <test_mixed>
+   10090:	00a46433          	or	x8,x8,x10
+   10094:	00c00513          	li	x10,12
+   10098:	00000097          	auipc	x1,0x0
+   1009c:	264080e7          	jalr	612(x1) # 102fc <fib>
+   100a0:	00040863          	beqz	x8,100b0 <_start+0x5c>
+   100a4:	00baed37          	lui	x26,0xbae
+   100a8:	badd0d13          	addi	x26,x26,-1107 # badbad <__global_pointer$+0xb9c039>
+   100ac:	00c0006f          	j	100b8 <_start+0x64>
+   100b0:	600d6d37          	lui	x26,0x600d6
+   100b4:	00dd0d13          	addi	x26,x26,13 # 600d600d <__global_pointer$+0x600c4499>
+   100b8:	0000006f          	j	100b8 <_start+0x64>
+
+000100bc <uncorrelated_branches_kernel>:
+   100bc:	00050793          	mv	x15,x10
+   100c0:	00157513          	andi	x10,x10,1
+   100c4:	0027f713          	andi	x14,x15,2
+   100c8:	00070463          	beqz	x14,100d0 <uncorrelated_branches_kernel+0x14>
+   100cc:	00256513          	ori	x10,x10,2
+   100d0:	0047f713          	andi	x14,x15,4
+   100d4:	00070463          	beqz	x14,100dc <uncorrelated_branches_kernel+0x20>
+   100d8:	00456513          	ori	x10,x10,4
+   100dc:	0087f713          	andi	x14,x15,8
+   100e0:	00070463          	beqz	x14,100e8 <uncorrelated_branches_kernel+0x2c>
+   100e4:	00856513          	ori	x10,x10,8
+   100e8:	0107f713          	andi	x14,x15,16
+   100ec:	00070463          	beqz	x14,100f4 <uncorrelated_branches_kernel+0x38>
+   100f0:	01056513          	ori	x10,x10,16
+   100f4:	0207f713          	andi	x14,x15,32
+   100f8:	00070463          	beqz	x14,10100 <uncorrelated_branches_kernel+0x44>
+   100fc:	02056513          	ori	x10,x10,32
+   10100:	0407f713          	andi	x14,x15,64
+   10104:	00070463          	beqz	x14,1010c <uncorrelated_branches_kernel+0x50>
+   10108:	04056513          	ori	x10,x10,64
+   1010c:	01879793          	slli	x15,x15,0x18
+   10110:	4187d793          	srai	x15,x15,0x18
+   10114:	0007d463          	bgez	x15,1011c <uncorrelated_branches_kernel+0x60>
+   10118:	08056513          	ori	x10,x10,128
+   1011c:	00008067          	ret
+
+00010120 <correlated_branches_kernel>:
+   10120:	00050793          	mv	x15,x10
+   10124:	00157613          	andi	x12,x10,1
+   10128:	00357713          	andi	x14,x10,3
+   1012c:	00300693          	li	x13,3
+   10130:	00d70463          	beq	x14,x13,10138 <correlated_branches_kernel+0x18>
+   10134:	00060713          	mv	x14,x12
+   10138:	0077f693          	andi	x13,x15,7
+   1013c:	00700613          	li	x12,7
+   10140:	00c68463          	beq	x13,x12,10148 <correlated_branches_kernel+0x28>
+   10144:	00070693          	mv	x13,x14
+   10148:	00f7f713          	andi	x14,x15,15
+   1014c:	00f00613          	li	x12,15
+   10150:	00c70463          	beq	x14,x12,10158 <correlated_branches_kernel+0x38>
+   10154:	00068713          	mv	x14,x13
+   10158:	01f7f693          	andi	x13,x15,31
+   1015c:	01f00613          	li	x12,31
+   10160:	00c68463          	beq	x13,x12,10168 <correlated_branches_kernel+0x48>
+   10164:	00070693          	mv	x13,x14
+   10168:	03f7f713          	andi	x14,x15,63
+   1016c:	03f00613          	li	x12,63
+   10170:	00c70463          	beq	x14,x12,10178 <correlated_branches_kernel+0x58>
+   10174:	00068713          	mv	x14,x13
+   10178:	07f7f513          	andi	x10,x15,127
+   1017c:	07f00693          	li	x13,127
+   10180:	00d50463          	beq	x10,x13,10188 <correlated_branches_kernel+0x68>
+   10184:	00070513          	mv	x10,x14
+   10188:	0ff00713          	li	x14,255
+   1018c:	00e79463          	bne	x15,x14,10194 <correlated_branches_kernel+0x74>
+   10190:	00078513          	mv	x10,x15
+   10194:	00008067          	ret
+
+00010198 <test_uncorrelated_branches>:
+   10198:	ff010113          	addi	x2,x2,-16
+   1019c:	00112623          	sw	x1,12(x2)
+   101a0:	00812423          	sw	x8,8(x2)
+   101a4:	00912223          	sw	x9,4(x2)
+   101a8:	00000413          	li	x8,0
+   101ac:	0ff00493          	li	x9,255
+   101b0:	00040513          	mv	x10,x8
+   101b4:	00000097          	auipc	x1,0x0
+   101b8:	f08080e7          	jalr	-248(x1) # 100bc <uncorrelated_branches_kernel>
+   101bc:	0ff57513          	andi	x10,x10,255
+   101c0:	00851c63          	bne	x10,x8,101d8 <test_uncorrelated_branches+0x40>
+   101c4:	00140413          	addi	x8,x8,1
+   101c8:	0ff47413          	andi	x8,x8,255
+   101cc:	fe9412e3          	bne	x8,x9,101b0 <test_uncorrelated_branches+0x18>
+   101d0:	00000513          	li	x10,0
+   101d4:	0080006f          	j	101dc <test_uncorrelated_branches+0x44>
+   101d8:	00100513          	li	x10,1
+   101dc:	00c12083          	lw	x1,12(x2)
+   101e0:	00812403          	lw	x8,8(x2)
+   101e4:	00412483          	lw	x9,4(x2)
+   101e8:	01010113          	addi	x2,x2,16
+   101ec:	00008067          	ret
+
+000101f0 <test_correlated_branches>:
+   101f0:	ff010113          	addi	x2,x2,-16
+   101f4:	00112623          	sw	x1,12(x2)
+   101f8:	00812423          	sw	x8,8(x2)
+   101fc:	00912223          	sw	x9,4(x2)
+   10200:	00000413          	li	x8,0
+   10204:	0ff00493          	li	x9,255
+   10208:	00040513          	mv	x10,x8
+   1020c:	00000097          	auipc	x1,0x0
+   10210:	f14080e7          	jalr	-236(x1) # 10120 <correlated_branches_kernel>
+   10214:	fff44793          	not	x15,x8
+   10218:	01879793          	slli	x15,x15,0x18
+   1021c:	4187d793          	srai	x15,x15,0x18
+   10220:	00140413          	addi	x8,x8,1
+   10224:	0ff47413          	andi	x8,x8,255
+   10228:	0087f7b3          	and	x15,x15,x8
+   1022c:	fff78793          	addi	x15,x15,-1
+   10230:	0ff57513          	andi	x10,x10,255
+   10234:	0ff7f793          	andi	x15,x15,255
+   10238:	00f51863          	bne	x10,x15,10248 <test_correlated_branches+0x58>
+   1023c:	fc9416e3          	bne	x8,x9,10208 <test_correlated_branches+0x18>
+   10240:	00000513          	li	x10,0
+   10244:	0080006f          	j	1024c <test_correlated_branches+0x5c>
+   10248:	00100513          	li	x10,1
+   1024c:	00c12083          	lw	x1,12(x2)
+   10250:	00812403          	lw	x8,8(x2)
+   10254:	00412483          	lw	x9,4(x2)
+   10258:	01010113          	addi	x2,x2,16
+   1025c:	00008067          	ret
+
+00010260 <test_mixed>:
+   10260:	ff010113          	addi	x2,x2,-16
+   10264:	00112623          	sw	x1,12(x2)
+   10268:	00812423          	sw	x8,8(x2)
+   1026c:	00912223          	sw	x9,4(x2)
+   10270:	01212023          	sw	x18,0(x2)
+   10274:	00000413          	li	x8,0
+   10278:	0ff00913          	li	x18,255
+   1027c:	00040513          	mv	x10,x8
+   10280:	00000097          	auipc	x1,0x0
+   10284:	e3c080e7          	jalr	-452(x1) # 100bc <uncorrelated_branches_kernel>
+   10288:	00050493          	mv	x9,x10
+   1028c:	00040513          	mv	x10,x8
+   10290:	00000097          	auipc	x1,0x0
+   10294:	e90080e7          	jalr	-368(x1) # 10120 <correlated_branches_kernel>
+   10298:	0ff57513          	andi	x10,x10,255
+   1029c:	fff44793          	not	x15,x8
+   102a0:	01879793          	slli	x15,x15,0x18
+   102a4:	4187d793          	srai	x15,x15,0x18
+   102a8:	00140713          	addi	x14,x8,1
+   102ac:	0ff77713          	andi	x14,x14,255
+   102b0:	00e7f7b3          	and	x15,x15,x14
+   102b4:	fff78793          	addi	x15,x15,-1
+   102b8:	0ff7f793          	andi	x15,x15,255
+   102bc:	0ff4f493          	andi	x9,x9,255
+   102c0:	00849c63          	bne	x9,x8,102d8 <test_mixed+0x78>
+   102c4:	00f51e63          	bne	x10,x15,102e0 <test_mixed+0x80>
+   102c8:	00070413          	mv	x8,x14
+   102cc:	fb2718e3          	bne	x14,x18,1027c <test_mixed+0x1c>
+   102d0:	00000513          	li	x10,0
+   102d4:	0100006f          	j	102e4 <test_mixed+0x84>
+   102d8:	00100513          	li	x10,1
+   102dc:	0080006f          	j	102e4 <test_mixed+0x84>
+   102e0:	00100513          	li	x10,1
+   102e4:	00c12083          	lw	x1,12(x2)
+   102e8:	00812403          	lw	x8,8(x2)
+   102ec:	00412483          	lw	x9,4(x2)
+   102f0:	00012903          	lw	x18,0(x2)
+   102f4:	01010113          	addi	x2,x2,16
+   102f8:	00008067          	ret
+
+000102fc <fib>:
+   102fc:	ff010113          	addi	x2,x2,-16
+   10300:	00112623          	sw	x1,12(x2)
+   10304:	00812423          	sw	x8,8(x2)
+   10308:	00912223          	sw	x9,4(x2)
+   1030c:	00050413          	mv	x8,x10
+   10310:	00100793          	li	x15,1
+   10314:	02a7d263          	bge	x15,x10,10338 <fib+0x3c>
+   10318:	fff50513          	addi	x10,x10,-1
+   1031c:	00000097          	auipc	x1,0x0
+   10320:	fe0080e7          	jalr	-32(x1) # 102fc <fib>
+   10324:	00050493          	mv	x9,x10
+   10328:	ffe40513          	addi	x10,x8,-2
+   1032c:	00000097          	auipc	x1,0x0
+   10330:	fd0080e7          	jalr	-48(x1) # 102fc <fib>
+   10334:	00a48433          	add	x8,x9,x10
+   10338:	00040513          	mv	x10,x8
+   1033c:	00c12083          	lw	x1,12(x2)
+   10340:	00812403          	lw	x8,8(x2)
+   10344:	00412483          	lw	x9,4(x2)
+   10348:	01010113          	addi	x2,x2,16
+   1034c:	00008067          	ret
+
+00010350 <test_function_call>:
+   10350:	ff010113          	addi	x2,x2,-16
+   10354:	00112623          	sw	x1,12(x2)
+   10358:	00c00513          	li	x10,12
+   1035c:	00000097          	auipc	x1,0x0
+   10360:	fa0080e7          	jalr	-96(x1) # 102fc <fib>
+   10364:	00000513          	li	x10,0
+   10368:	00c12083          	lw	x1,12(x2)
+   1036c:	01010113          	addi	x2,x2,16
+   10370:	00008067          	ret
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	fmsub.d	f6,f6,f4,f7,rmm
+   4:	2820                	fld	f8,80(x8)
+   6:	29554e47          	fmsub.s	f28,f10,f21,f5,rmm
+   a:	3720                	fld	f8,104(x14)
+   c:	322e                	fld	f4,232(x2)
+   e:	302e                	fld	f0,232(x2)
+	...
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1e41                	addi	x28,x28,-16
+   2:	0000                	unimp
+   4:	7200                	flw	f8,32(x12)
+   6:	7369                	lui	x6,0xffffa
+   8:	01007663          	bgeu	x0,x16,14 <_start-0x10040>
+   c:	0014                	0x14
+   e:	0000                	unimp
+  10:	7205                	lui	x4,0xfffe1
+  12:	3376                	fld	f6,376(x2)
+  14:	6932                	flw	f18,12(x2)
+  16:	7032                	flw	f0,44(x2)
+  18:	5f30                	lw	x12,120(x14)
+  1a:	326d                	jal	fffff9c4 <__global_pointer$+0xfffede50>
+  1c:	3070                	fld	f12,224(x8)
+	...
+0000000 37 01 00 84 13 01 01 ff 23 26 11 00 23 24 81 00
+0000010 23 22 a1 01 37 ed ff de 13 0d fd ef 97 00 00 00
+0000020 e7 80 80 12 13 04 05 00 97 00 00 00 e7 80 40 17
+0000030 33 64 a4 00 97 00 00 00 e7 80 80 1d 33 64 a4 00
+0000040 13 05 c0 00 97 00 00 00 e7 80 40 26 63 08 04 00
+0000050 37 ed ba 00 13 0d dd ba 6f 00 c0 00 37 6d 0d 60
+0000060 13 0d dd 00 6f 00 00 00 93 07 05 00 13 75 15 00
+0000070 13 f7 27 00 63 04 07 00 13 65 25 00 13 f7 47 00
+0000080 63 04 07 00 13 65 45 00 13 f7 87 00 63 04 07 00
+0000090 13 65 85 00 13 f7 07 01 63 04 07 00 13 65 05 01
+00000a0 13 f7 07 02 63 04 07 00 13 65 05 02 13 f7 07 04
+00000b0 63 04 07 00 13 65 05 04 93 97 87 01 93 d7 87 41
+00000c0 63 d4 07 00 13 65 05 08 67 80 00 00 93 07 05 00
+00000d0 13 76 15 00 13 77 35 00 93 06 30 00 63 04 d7 00
+00000e0 13 07 06 00 93 f6 77 00 13 06 70 00 63 84 c6 00
+00000f0 93 06 07 00 13 f7 f7 00 13 06 f0 00 63 04 c7 00
+0000100 13 87 06 00 93 f6 f7 01 13 06 f0 01 63 84 c6 00
+0000110 93 06 07 00 13 f7 f7 03 13 06 f0 03 63 04 c7 00
+0000120 13 87 06 00 13 f5 f7 07 93 06 f0 07 63 04 d5 00
+0000130 13 05 07 00 13 07 f0 0f 63 94 e7 00 13 85 07 00
+0000140 67 80 00 00 13 01 01 ff 23 26 11 00 23 24 81 00
+0000150 23 22 91 00 13 04 00 00 93 04 f0 0f 13 05 04 00
+0000160 97 00 00 00 e7 80 80 f0 13 75 f5 0f 63 1c 85 00
+0000170 13 04 14 00 13 74 f4 0f e3 12 94 fe 13 05 00 00
+0000180 6f 00 80 00 13 05 10 00 83 20 c1 00 03 24 81 00
+0000190 83 24 41 00 13 01 01 01 67 80 00 00 13 01 01 ff
+00001a0 23 26 11 00 23 24 81 00 23 22 91 00 13 04 00 00
+00001b0 93 04 f0 0f 13 05 04 00 97 00 00 00 e7 80 40 f1
+00001c0 93 47 f4 ff 93 97 87 01 93 d7 87 41 13 04 14 00
+00001d0 13 74 f4 0f b3 f7 87 00 93 87 f7 ff 13 75 f5 0f
+00001e0 93 f7 f7 0f 63 18 f5 00 e3 16 94 fc 13 05 00 00
+00001f0 6f 00 80 00 13 05 10 00 83 20 c1 00 03 24 81 00
+0000200 83 24 41 00 13 01 01 01 67 80 00 00 13 01 01 ff
+0000210 23 26 11 00 23 24 81 00 23 22 91 00 23 20 21 01
+0000220 13 04 00 00 13 09 f0 0f 13 05 04 00 97 00 00 00
+0000230 e7 80 c0 e3 93 04 05 00 13 05 04 00 97 00 00 00
+0000240 e7 80 00 e9 13 75 f5 0f 93 47 f4 ff 93 97 87 01
+0000250 93 d7 87 41 13 07 14 00 13 77 f7 0f b3 f7 e7 00
+0000260 93 87 f7 ff 93 f7 f7 0f 93 f4 f4 0f 63 9c 84 00
+0000270 63 1e f5 00 13 04 07 00 e3 18 27 fb 13 05 00 00
+0000280 6f 00 00 01 13 05 10 00 6f 00 80 00 13 05 10 00
+0000290 83 20 c1 00 03 24 81 00 83 24 41 00 03 29 01 00
+00002a0 13 01 01 01 67 80 00 00 13 01 01 ff 23 26 11 00
+00002b0 23 24 81 00 23 22 91 00 13 04 05 00 93 07 10 00
+00002c0 63 d2 a7 02 13 05 f5 ff 97 00 00 00 e7 80 00 fe
+00002d0 93 04 05 00 13 05 e4 ff 97 00 00 00 e7 80 00 fd
+00002e0 33 84 a4 00 13 05 04 00 83 20 c1 00 03 24 81 00
+00002f0 83 24 41 00 13 01 01 01 67 80 00 00 13 01 01 ff
+0000300 23 26 11 00 13 05 c0 00 97 00 00 00 e7 80 00 fa
+0000310 13 05 00 00 83 20 c1 00 13 01 01 01 67 80 00 00
+0000320
+Target file /Users/liuzikai/Documents/Courses/ECE 411/0_warning_0_error/mp4/bin/../simulation/modelsim/memory.lst exists.
+Assembled ../testcode/comp1.s and wrote memory contents to /Users/liuzikai/Documents/Courses/ECE 411/0_warning_0_error/mp4/bin/../simulation/modelsim/memory.lst

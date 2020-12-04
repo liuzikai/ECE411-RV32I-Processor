@@ -101,7 +101,7 @@ generate
                     end
                 end
                 s_writeback: next_state = (ca_resp ? s_load : s_writeback);
-                s_load:      next_state = (ca_resp ? s_match : s_load);
+                s_load:      next_state = (ca_resp ? s_idle : s_load);
                 default: next_state = state;
             endcase
         end
@@ -122,10 +122,21 @@ generate
         always_comb begin
             // 4 way
             lru_in[0] = ~hit_way[1];
-            lru_in[1] = (hit_way[1] == 0) ? ~hit_way[0] : lru_out[1];
-            lru_in[2] = (hit_way[1] == 1) ? ~hit_way[0] : lru_out[2];
+            lru_in[1] = (hit_way[1] == 1'b0) ? ~hit_way[0] : lru_out[1];
+            lru_in[2] = (hit_way[1] == 1'b1) ? ~hit_way[0] : lru_out[2];
         end
-    end // else $fatal("%s %0d: Not supported way_deg", `__FILE__, `__LINE__);
+    end else if (way_deg == 3) begin
+        always_comb begin
+            // 8 way
+            lru_in[0] = ~hit_way[2];
+            lru_in[1] = (hit_way[2] == 1'b0) ? ~hit_way[1] : lru_out[1];
+            lru_in[2] = (hit_way[2] == 1'b1) ? ~hit_way[1] : lru_out[2];
+            lru_in[3] = (hit_way[2:1] == 2'b00) ? ~hit_way[0] : lru_out[3];
+            lru_in[4] = (hit_way[2:1] == 2'b01) ? ~hit_way[0] : lru_out[4];
+            lru_in[5] = (hit_way[2:1] == 2'b10) ? ~hit_way[0] : lru_out[5];
+            lru_in[6] = (hit_way[2:1] == 2'b11) ? ~hit_way[0] : lru_out[6];
+        end
+    end
 endgenerate
 
 always_comb begin : state_operation_logic
@@ -186,7 +197,7 @@ always_comb begin : state_operation_logic
             // Load data from memory
             ca_read = 1'b1;
             datamux_sel = datamux::ca_rdata;
-            load_data[lru_way] = 1'b1;
+            load_data[lru_way] = ca_resp;
 
             // Update tag
             load_tag[lru_way] = 1'b1;
