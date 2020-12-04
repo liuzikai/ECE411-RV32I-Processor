@@ -111,15 +111,19 @@ logic [255:0] ca_wdata;
 logic ca_resp;
 
 // Signal used in instruction cache
-// if we use the prefetch for instruction between L1 and L2
+/***** if we use the prefetch for instruction between L1 and L2 *******/
 assign i_addr_prefetch_up   = i_addr_l1_down;
 assign i_read_prefetch_up   = i_read_l1_down;
 assign i_resp_l1_down       = i_resp_prefetch_up;
 assign i_addr_l2_up         = i_addr_prefetch_down;
 assign i_read_l2_up         = i_read_prefetch_down;
 assign i_resp_prefetch_down = i_resp_l2_up;
+/***** if we don't use the prefetch for instruction between L1 and L2 *******/
+// assign i_addr_l2_up    = i_addr_l1_down;
+// assign i_read_l2_up    = i_read_l1_down;
+// assign i_resp_l1_down  = i_resp_l2_up;
 
-// if we use instruction L2 cache
+/********* if we use instruction L2 cache ******/
 assign i_rdata256_l1_down = i_rdata256_l2_up;
 
 assign i_a_addr           = i_addr_l2_down;
@@ -127,22 +131,37 @@ assign i_rdata256_l2_down = i_a_rdata;
 assign i_a_read           = i_read_l2_down;
 assign i_resp_l2_down     = i_a_resp;
 
+/********* if we don't use L2 instruction cache ******/
+// assign i_a_addr           = i_addr_l1_down;
+// assign i_rdata256_l1_down = i_a_rdata;
+// assign i_a_read           = i_read_l1_down;
+// assign i_a_write          = i_write_l1_down;
+// assign i_resp_l1_down     = i_a_resp;
 
-// For data cache
-// if we use L2 cache
+// Signal used in data cache
+/******* if we use L2 data cache **********/
+// signal between the L2 and L1
 assign d_addr_l2_up       = d_addr_l1_down;
 assign d_wdata256_l2_up   = d_wdata256_l1_down;
 assign d_rdata256_l1_down = d_rdata256_l2_up;
 assign d_read_l2_up       = d_read_l1_down;
 assign d_write_l2_up      = d_write_l1_down;
 assign d_resp_l1_down     = d_resp_l2_up;
-
+// signal between L2 and arbiter
 assign d_a_addr           = d_addr_l2_down;
 assign d_a_wdata          = d_wdata256_l2_down;
 assign d_rdata256_l2_down = d_a_rdata;
 assign d_a_read           = d_read_l2_down;
 assign d_a_write          = d_write_l2_down;
 assign d_resp_l2_down     = d_a_resp;
+
+/******* if we don't use L2 data cache **********/
+// assign d_a_addr           = d_addr_l1_down;
+// assign d_a_wdata          = d_wdata256_l1_down;
+// assign d_rdata256_l1_down = d_a_rdata;
+// assign d_a_read           = d_read_l1_down;
+// assign d_a_write          = d_write_l1_down;
+// assign d_resp_l1_down     = d_a_resp;
 
 cpu cpu(
     .*
