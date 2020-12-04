@@ -15,7 +15,9 @@ module mp4 #(
     parameter l2_d_cache_s_index = 10,
     parameter l2_d_cache_way_deg = 3,
 
-    parameter use_d_prefetcher = 0
+    parameter use_d_prefetcher = 0,
+
+    parameter bp_type = 0
 )
 (
     input clk,
@@ -211,7 +213,7 @@ generate
     end
 endgenerate
 
-cpu cpu(
+cpu #(.bp_type(bp_type)) cpu(
     .*
 );
 

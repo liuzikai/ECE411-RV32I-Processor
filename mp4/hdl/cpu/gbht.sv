@@ -1,10 +1,10 @@
 import rv32i_types::*;
 
 module gbht #(
-    parameter s_row_idx = 5,
+    parameter s_row_idx = 4,
     parameter s_row = 2**s_row_idx,
-    parameter s_pc_offset = 2,
-    parameter s_gbhr = 5,
+    parameter s_pc_offset = 3,
+    parameter s_gbhr = 4,
     parameter s_col = 2**s_gbhr
 )
 (
@@ -100,7 +100,7 @@ always_ff @(posedge clk) begin
         end
         gbhr <= {s_gbhr{1'b0}};
     end else if (update) begin
-        pht[state_pkg_ex.row][state_pkg_ex.ghbr] <= state_in;
+        pht[state_pkg_ex.row][state_pkg_ex.gbhr] <= state_in;
         gbhr <= gbhr_in;
     end
 end

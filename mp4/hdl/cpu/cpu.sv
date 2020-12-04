@@ -1,6 +1,9 @@
 import rv32i_types::*;
 
-module cpu (
+module cpu #(
+    parameter bp_type = 0
+)
+(
     input clk,
     input rst,
 
@@ -62,7 +65,7 @@ control control(
     .*
 );
 
-datapath datapath(
+datapath #(.bp_type(bp_type)) datapath(
     // Unaligned data channel
     .d_addr(raw_d_addr),
     .d_rdata(raw_d_rdata),

@@ -4,7 +4,7 @@ module lbht #(
     parameter s_bhrt_idx = 5,
     parameter s_bhrt = 2**s_bhrt_idx,
     parameter s_pc_offset = 2,
-    parameter s_bhr = 2,
+    parameter s_bhr = 6,
     parameter s_pht = 2**s_bhr
 )
 (
@@ -28,7 +28,7 @@ typedef enum logic [1:0] {
 
 typedef struct packed {
     logic [s_bhrt_idx-1:0] bhrt_idx;
-    logic [s_gbhr-1:0] bhr;
+    logic [s_bhr-1:0] bhr;
     state_t state;
     logic br_take;
 } state_pkg_t;
@@ -41,7 +41,7 @@ logic [s_bhr-1:0] bhr_in;
 state_pkg_t state_pkg_if, state_pkg_id, state_pkg_ex;
 
 always_comb begin
-    state_pkg_if.bhrt_idx = addr[s_row_idx+s_pc_offset-1:s_pc_offset];
+    state_pkg_if.bhrt_idx = addr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
     state_pkg_if.bhr = (update & (state_pkg_ex.bhrt_idx == state_pkg_if.bhrt_idx)) ? bhr_in : bhrt[state_pkg_if.bhrt_idx];
     state_pkg_if.state = (update & (state_pkg_if.bhr == state_pkg_ex.bhr)) ? state_in : pht[state_pkg_if.bhr];
     unique case(state_pkg_if.state)

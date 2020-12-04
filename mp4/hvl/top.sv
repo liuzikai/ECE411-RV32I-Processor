@@ -14,6 +14,8 @@
 
 `define USE_D_PREFETCHER    0
 
+`define BP_TYPE             0
+
 module mp4_tb;
 `timescale 1ns/10ps
 
@@ -210,7 +212,9 @@ mp4 #(
     .l2_d_cache_s_index(`L2_D_CACHE_S_INDEX),
     .l2_d_cache_way_deg(`L2_D_CACHE_WAY_DEG),
 
-    .use_d_prefetcher(`USE_D_PREFETCHER)
+    .use_d_prefetcher(`USE_D_PREFETCHER),
+
+    .bp_type(`BP_TYPE)
 
 ) dut(
     .clk(itf.clk),
