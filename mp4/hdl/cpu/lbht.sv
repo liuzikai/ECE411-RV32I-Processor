@@ -4,16 +4,17 @@ module lbht #(
     parameter s_bhrt_idx = 5,
     parameter s_bhrt = 2**s_bhrt_idx,
     parameter s_pc_offset = 2,
-    parameter s_bhr = 2,
+    parameter s_bhr = 6,
     parameter s_pht = 2**s_bhr
 )
 (
     input logic clk,
     input logic rst,
+    input logic stall_id,
+    input logic stall_ex,
     input logic update,
     input logic br_en,
-    input rv32i_word raddr,
-    input rv32i_word waddr,
+    input rv32i_word addr,
     output logic br_take,
     output logic mispred
 );
@@ -24,23 +25,40 @@ typedef enum logic [1:0] {
     wt,
     st
 } state_t;
-state_t w_state, state_in, r_state;
+
+typedef struct packed {
+    logic [s_bhrt_idx-1:0] bhrt_idx;
+    logic [s_bhr-1:0] bhr;
+    state_t state;
+    logic br_take;
+} state_pkg_t;
+
+state_t state_in;
 
 state_t pht [s_pht];
 logic [s_bhr-1:0] bhrt [s_bhrt];
-logic [s_bhrt_idx-1:0] r_bhrt_idx, w_bhrt_idx;
-logic [s_bhr-1:0] r_bhr, w_bhr, bhr_in;
-
-assign w_bhrt_idx = waddr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
-assign r_bhrt_idx = raddr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
+logic [s_bhr-1:0] bhr_in;
+state_pkg_t state_pkg_if, state_pkg_id, state_pkg_ex;
 
 always_comb begin
-    w_bhr = bhrt[w_bhrt_idx];
-    w_state = pht[w_bhr];
-    state_in = w_state;
+    state_pkg_if.bhrt_idx = addr[s_bhrt_idx+s_pc_offset-1:s_pc_offset];
+    state_pkg_if.bhr = (update & (state_pkg_ex.bhrt_idx == state_pkg_if.bhrt_idx)) ? bhr_in : bhrt[state_pkg_if.bhrt_idx];
+    state_pkg_if.state = (update & (state_pkg_if.bhr == state_pkg_ex.bhr)) ? state_in : pht[state_pkg_if.bhr];
+    unique case(state_pkg_if.state)
+        sn, wn: state_pkg_if.br_take = 1'b0;
+        st, wt: state_pkg_if.br_take = 1'b1;
+        default: state_pkg_if.br_take = 1'b0;
+    endcase
+end
+
+assign bhr_in = {state_pkg_ex.bhr[s_bhr-2:0], br_en};
+assign br_take = state_pkg_if.br_take;
+
+always_comb begin
+    state_in = state_pkg_ex.state;
     mispred = 1'b0;
     if (update) begin
-        unique case(w_state)
+        unique case(state_pkg_ex.state)
             sn: begin
                 if (br_en) begin
                     state_in = wn;
@@ -72,15 +90,6 @@ always_comb begin
             default: ;
         endcase
     end
-    bhr_in = {bhrt[w_bhrt_idx][s_bhr-2:0], br_en};
-    r_bhr = (update & (w_bhrt_idx == r_bhrt_idx)) ? bhr_in : bhrt[r_bhrt_idx];
-    r_state = (update & (w_bhr == r_bhr)) ? state_in : pht[r_bhr];
-    br_take = 1'b0;
-    unique case(r_state)
-        sn, wn: br_take = 1'b0;
-        st, wt: br_take = 1'b1;
-        default: ;
-    endcase
 end
 
 always_ff @(posedge clk) begin
@@ -92,9 +101,14 @@ always_ff @(posedge clk) begin
             bhrt[j] <= {s_bhr{1'b0}};
         end
     end else if (update) begin
-        pht[w_bhr] <= state_in;
-        bhrt[w_bhrt_idx] <= bhr_in;
+        pht[state_pkg_ex.bhr] <= state_in;
+        bhrt[state_pkg_ex.bhrt_idx] <= bhr_in;
     end
+end
+
+always_ff @(posedge clk) begin
+    state_pkg_id <= (stall_id) ? state_pkg_id : state_pkg_if;
+    state_pkg_ex <= (stall_ex) ? state_pkg_ex : state_pkg_id;
 end
 
 endmodule : lbht

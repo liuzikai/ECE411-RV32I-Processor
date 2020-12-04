@@ -1,19 +1,20 @@
 import rv32i_types::*;
 
 module gbht #(
-    parameter s_row_idx = 5,
+    parameter s_row_idx = 4,
     parameter s_row = 2**s_row_idx,
-    parameter s_pc_offset = 2,
-    parameter s_gbhr = 5,
+    parameter s_pc_offset = 3,
+    parameter s_gbhr = 4,
     parameter s_col = 2**s_gbhr
 )
 (
     input logic clk,
     input logic rst,
+    input logic stall_id,
+    input logic stall_ex,
     input logic update,
     input logic br_en,
-    input rv32i_word raddr,
-    input rv32i_word waddr,
+    input rv32i_word addr,
     output logic br_take,
     output logic mispred
 );
@@ -24,25 +25,39 @@ typedef enum logic [1:0] {
     wt,
     st
 } state_t;
-state_t r_state, w_state, state_in;
+
+typedef struct packed {
+    logic [s_row_idx-1:0] row;
+    logic [s_gbhr-1:0] gbhr;
+    state_t state;
+    logic br_take;
+} state_pkg_t;
+
+state_t state_in;
 
 state_t pht [s_row][s_col];
 logic [s_gbhr-1:0] gbhr, gbhr_in;
-logic [s_row_idx-1:0] r_row, w_row;
-logic [s_gbhr-1:0] r_col, w_col;
+state_pkg_t state_pkg_if, state_pkg_id, state_pkg_ex;
 
-assign w_row = waddr[s_row_idx+s_pc_offset-1:s_pc_offset];
-assign r_row = raddr[s_row_idx+s_pc_offset-1:s_pc_offset];
+always_comb begin
+    state_pkg_if.row = addr[s_row_idx+s_pc_offset-1:s_pc_offset];
+    state_pkg_if.gbhr = gbhr;
+    state_pkg_if.state = pht[state_pkg_if.row][state_pkg_if.gbhr];
+    unique case(state_pkg_if.state)
+        sn, wn: state_pkg_if.br_take = 1'b0;
+        st, wt: state_pkg_if.br_take = 1'b1;
+        default: state_pkg_if.br_take = 1'b0;
+    endcase
+end
 
 assign gbhr_in = {gbhr[s_gbhr-2:0], br_en};
+assign br_take = state_pkg_if.br_take;
 
 always_comb begin : state_in_logic
-    w_col = gbhr;
-    w_state = pht[w_row][w_col];
-    state_in = w_state;
+    state_in = state_pkg_ex.state;
     mispred = 1'b0;
     if (update) begin
-        unique case(w_state)
+        unique case(state_pkg_ex.state)
             sn: begin
                 if (br_en) begin
                     state_in = wn;
@@ -74,14 +89,6 @@ always_comb begin : state_in_logic
             default: ;
         endcase
     end
-    r_col = (update) ? gbhr_in : gbhr;
-    r_state = (update & (r_row == w_row) & (r_col == w_col)) ? state_in : pht[r_row][r_col];
-    br_take = 1'b0;
-    unique case(r_state)
-        sn, wn: br_take = 1'b0;
-        st, wt: br_take = 1'b1;
-        default: ;
-    endcase
 end
 
 always_ff @(posedge clk) begin
@@ -93,9 +100,14 @@ always_ff @(posedge clk) begin
         end
         gbhr <= {s_gbhr{1'b0}};
     end else if (update) begin
-        pht[w_row][w_col] <= state_in;
+        pht[state_pkg_ex.row][state_pkg_ex.gbhr] <= state_in;
         gbhr <= gbhr_in;
     end
+end
+
+always_ff @(posedge clk) begin
+    state_pkg_id <= (stall_id) ? state_pkg_id : state_pkg_if;
+    state_pkg_ex <= (stall_ex) ? state_pkg_ex : state_pkg_id;
 end
 
 endmodule : gbht

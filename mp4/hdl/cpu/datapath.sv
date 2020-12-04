@@ -2,7 +2,10 @@
 
 import rv32i_types::*;
 
-module datapath(
+module datapath #(
+    parameter bp_type = 0
+)
+(
     input clk,
     input rst,
 
@@ -270,10 +273,9 @@ cmp cmp(
     .f(br_en)
 );
 
-lbht lbht (
+tournament_p #(.bp_type(bp_type)) tournament_p (
     .update(bp_update & ~stall_ex),
-    .raddr(pc_out),
-    .waddr(pc_ex_out),
+    .addr(pc_out),
     .*
 );
 
