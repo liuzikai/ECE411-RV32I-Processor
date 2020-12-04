@@ -28,7 +28,7 @@ register addr_to_prefetch(
     .clk(clk),
     .rst(rst),
     .load(mem_read_from_cpu && state==normal_read), // prefetch && a new read come
-    .in(mem_addr_from_cpu+32'h0100),
+    .in(mem_addr_from_cpu+32'h0020),
     .out(mem_addr_to_prefetch_out)
 );
 
@@ -64,7 +64,7 @@ begin : next_state_logic
     next_state=state;
     unique case(state)
         normal_read: begin
-            if(cache_resp)begin // after reading the current line, read next line
+            if(mem_read_from_cpu && cache_resp)begin // after reading the current line, read next line
                 next_state=prefetch;
             end
             else begin

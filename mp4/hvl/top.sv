@@ -1,3 +1,19 @@
+`define L1_I_CACHE_S_INDEX  3
+
+`define USE_L2_I_CACHE      1
+`define L2_I_CACHE_S_INDEX  6
+`define L2_I_CACHE_WAY_DEG  2
+
+`define USE_I_PREFETCHER    1
+
+`define L1_D_CACHE_S_INDEX  3
+
+`define USE_L2_D_CACHE      1
+`define L2_D_CACHE_S_INDEX  10
+`define L2_D_CACHE_WAY_DEG  3
+
+`define USE_D_PREFETCHER    0
+
 module mp4_tb;
 `timescale 1ns/10ps
 
@@ -135,19 +151,41 @@ assign perf_cnt.mispred = dut.cpu.datapath.mispred;
 assign perf_cnt.l1_i_cache_read = dut.i_read;
 assign perf_cnt.l1_i_cache_resp = dut.i_resp;
 
-assign perf_cnt.l2_i_cache_read = dut.i_read_l1_l2_prefetch;
-assign perf_cnt.l2_i_cache_read_from_l1 = dut.i_read_l2;
-assign perf_cnt.l2_i_cache_resp = dut.i_resp_l1_l2_prefetch;
+generate
+    if (`USE_L2_I_CACHE) begin
+        assign perf_cnt.l2_i_cache_read = dut.i_read_l2_up;
+        assign perf_cnt.l2_i_cache_read_from_l1 = dut.i_read_l1_down;
+        assign perf_cnt.l2_i_cache_resp = dut.i_resp_l2_up;
+    end else begin
+        assign perf_cnt.l2_i_cache_read = '0;
+        assign perf_cnt.l2_i_cache_read_from_l1 = '0;
+        assign perf_cnt.l2_i_cache_resp = '0;
+    end
+endgenerate
 
 assign perf_cnt.l1_d_cache_read = dut.d_read;
 assign perf_cnt.l1_d_cache_write = dut.d_write;
 assign perf_cnt.l1_d_cache_resp = dut.d_resp;
 
-assign perf_cnt.l2_d_cache_read = dut.d_read_l2;
-assign perf_cnt.l2_d_cache_read_from_l1 = dut.d_read_l2;
-assign perf_cnt.l2_d_cache_write = dut.d_write_l2;
-assign perf_cnt.l2_d_cache_write_from_l1 = dut.d_write_l2;
-assign perf_cnt.l2_d_cache_resp = dut.d_resp_l2;
+generate
+    if (`USE_L2_D_CACHE) begin
+        assign perf_cnt.l2_d_cache_read = dut.d_read_l2_up;
+        assign perf_cnt.l2_d_cache_read_from_l1 = dut.d_read_l1_down;
+        assign perf_cnt.l2_d_cache_write = dut.d_write_l2_up;
+        assign perf_cnt.l2_d_cache_write_from_l1 = dut.d_write_l1_down;
+        assign perf_cnt.l2_d_cache_resp = dut.d_resp_l2_up;
+    end else begin
+        assign perf_cnt.l2_d_cache_read = '0;
+        assign perf_cnt.l2_d_cache_read_from_l1 = '0;
+        assign perf_cnt.l2_d_cache_write = '0;
+        assign perf_cnt.l2_d_cache_write_from_l1 = '0;
+        assign perf_cnt.l2_d_cache_resp = '0;
+    end
+endgenerate
+
+assign perf_cnt.pmem_read = itf.mem_read;
+assign perf_cnt.pmem_write = itf.mem_write;
+assign perf_cnt.pmem_resp = itf.mem_resp;
 
 performance_counter performance_counter(
     .itf(perf_cnt)
@@ -157,7 +195,24 @@ performance_counter performance_counter(
 
 /*********************** Instantiate your design here ************************/
 
-mp4 dut(
+mp4 #(
+    .l1_i_cache_s_index(`L1_I_CACHE_S_INDEX),
+
+    .use_l2_i_cache(`USE_L2_I_CACHE),
+    .l2_i_cache_s_index(`L2_I_CACHE_S_INDEX),
+    .l2_i_cache_way_deg(`L2_I_CACHE_WAY_DEG),
+
+    .use_i_prefetcher(`USE_I_PREFETCHER),
+
+    .l1_d_cache_s_index(`L1_D_CACHE_S_INDEX),
+
+    .use_l2_d_cache(`USE_L2_D_CACHE),
+    .l2_d_cache_s_index(`L2_D_CACHE_S_INDEX),
+    .l2_d_cache_way_deg(`L2_D_CACHE_WAY_DEG),
+
+    .use_d_prefetcher(`USE_D_PREFETCHER)
+
+) dut(
     .clk(itf.clk),
     .rst(itf.rst),
 
