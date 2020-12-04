@@ -5,7 +5,6 @@ interface perf_cnt_itf(input clk, input rst);
 
     logic halt;
     
-
     // Caches
 
     logic l1_i_cache_read;

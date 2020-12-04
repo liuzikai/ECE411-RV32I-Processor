@@ -1,6 +1,23 @@
 import rv32i_types::*;
 
-module mp4(
+module mp4 #(
+    parameter l1_i_cache_s_index = 3,
+
+    parameter use_l2_i_cache = 1,
+    parameter l2_i_cache_s_index = 6,
+    parameter l2_i_cache_way_deg = 2,
+
+    parameter use_i_prefetcher = 1,
+
+    parameter l1_d_cache_s_index = 3,
+
+    parameter use_l2_d_cache = 1,
+    parameter l2_d_cache_s_index = 10,
+    parameter l2_d_cache_way_deg = 3,
+
+    parameter use_d_prefetcher = 0
+)
+(
     input clk,
     input rst,
 
@@ -12,13 +29,13 @@ module mp4(
     input  logic            mem_resp
 );
 
-// CPU <-> L1 I-Cache 
+// CPU <-> L1 I-Cache & I-Bus-Adapter
 rv32i_word i_addr;
 rv32i_word i_rdata;
 logic      i_read;
 logic      i_resp;
 
-// CPU <-> L1 D-Cache
+// CPU <-> L1 D-Cache & D-Bus-Adapter
 rv32i_word  d_addr;
 rv32i_word  d_rdata;
 rv32i_word  d_wdata;
@@ -88,13 +105,13 @@ logic         d_write_l2_down;
 logic         d_resp_l2_down;
 
 
-// L1 I-Cache <-> Arbiter
+// L1 I-Cache OR L2 I-Cache <-> Arbiter
 logic i_a_read;
 logic [31:0]  i_a_addr;
 logic [255:0] i_a_rdata;
 logic i_a_resp;
 
-// L2 D-Cache <-> Arbiter
+// L1 D-Cache OR L2 D-Cache <-> Arbiter
 logic d_a_write;
 logic d_a_read;
 logic [31:0]  d_a_addr;
@@ -110,39 +127,89 @@ logic [255:0] ca_rdata;
 logic [255:0] ca_wdata;
 logic ca_resp;
 
-// Signal used in instruction cache
-// if we use the prefetch for instruction between L1 and L2
-assign i_addr_prefetch_up   = i_addr_l1_down;
-assign i_read_prefetch_up   = i_read_l1_down;
-assign i_resp_l1_down       = i_resp_prefetch_up;
-assign i_addr_l2_up         = i_addr_prefetch_down;
-assign i_read_l2_up         = i_read_prefetch_down;
-assign i_resp_prefetch_down = i_resp_l2_up;
+// Signal used in instruction caches
+generate
+    if (use_l2_i_cache) begin
 
-// if we use instruction L2 cache
-assign i_rdata256_l1_down = i_rdata256_l2_up;
+        // If we use instruction L2 cache
+        always_comb begin
+            i_rdata256_l1_down = i_rdata256_l2_up;
+            i_a_addr           = i_addr_l2_down;
+            i_rdata256_l2_down = i_a_rdata;
+            i_a_read           = i_read_l2_down;
+            i_resp_l2_down     = i_a_resp;
+        end
 
-assign i_a_addr           = i_addr_l2_down;
-assign i_rdata256_l2_down = i_a_rdata;
-assign i_a_read           = i_read_l2_down;
-assign i_resp_l2_down     = i_a_resp;
+        if (use_i_prefetcher) begin
+
+            // If we use the prefetch for instruction between L1 and L2
+            always_comb begin
+                i_addr_prefetch_up   = i_addr_l1_down;
+                i_read_prefetch_up   = i_read_l1_down;
+                i_resp_l1_down       = i_resp_prefetch_up;
+                i_addr_l2_up         = i_addr_prefetch_down;
+                i_read_l2_up         = i_read_prefetch_down;
+                i_resp_prefetch_down = i_resp_l2_up;
+            end
+
+        end else begin
+
+            // If we don't use the prefetch for instruction between L1 and L2
+            always_comb begin
+                i_addr_l2_up    = i_addr_l1_down;
+                i_read_l2_up    = i_read_l1_down;
+                i_resp_l1_down  = i_resp_l2_up;
+            end
+
+        end
+
+    end else begin
+
+        // If we don't use L2 instruction cache
+        always_comb begin
+            i_a_addr           = i_addr_l1_down;
+            i_rdata256_l1_down = i_a_rdata;
+            i_a_read           = i_read_l1_down;
+            i_resp_l1_down     = i_a_resp;
+        end
+    end
+endgenerate
 
 
-// For data cache
-// if we use L2 cache
-assign d_addr_l2_up       = d_addr_l1_down;
-assign d_wdata256_l2_up   = d_wdata256_l1_down;
-assign d_rdata256_l1_down = d_rdata256_l2_up;
-assign d_read_l2_up       = d_read_l1_down;
-assign d_write_l2_up      = d_write_l1_down;
-assign d_resp_l1_down     = d_resp_l2_up;
+// For data caches
+generate
+    if (use_l2_d_cache) begin
 
-assign d_a_addr           = d_addr_l2_down;
-assign d_a_wdata          = d_wdata256_l2_down;
-assign d_rdata256_l2_down = d_a_rdata;
-assign d_a_read           = d_read_l2_down;
-assign d_a_write          = d_write_l2_down;
-assign d_resp_l2_down     = d_a_resp;
+        // If we use L2 cache
+        always_comb begin
+            d_addr_l2_up       = d_addr_l1_down;
+            d_wdata256_l2_up   = d_wdata256_l1_down;
+            d_rdata256_l1_down = d_rdata256_l2_up;
+            d_read_l2_up       = d_read_l1_down;
+            d_write_l2_up      = d_write_l1_down;
+            d_resp_l1_down     = d_resp_l2_up;
+
+            d_a_addr           = d_addr_l2_down;
+            d_a_wdata          = d_wdata256_l2_down;
+            d_rdata256_l2_down = d_a_rdata;
+            d_a_read           = d_read_l2_down;
+            d_a_write          = d_write_l2_down;
+            d_resp_l2_down     = d_a_resp;
+        end
+
+    end else begin
+
+        // If we don't use L2 data cache
+        always_comb begin
+            d_a_addr           = d_addr_l1_down;
+            d_a_wdata          = d_wdata256_l1_down;
+            d_rdata256_l1_down = d_a_rdata;
+            d_a_read           = d_read_l1_down;
+            d_a_write          = d_write_l1_down;
+            d_resp_l1_down     = d_a_resp;
+        end
+    end
+endgenerate
 
 cpu cpu(
     .*
@@ -161,7 +228,7 @@ bus_adapter i_bus_adapter (
 );
 
 
-cache #(5, 3, 1, 0) l1_i_cache (
+cache #(5, l1_i_cache_s_index, 1, 0) l1_i_cache (
     .clk(clk),
     .rst(rst),
     // I-Bus-Adapter side
@@ -181,38 +248,46 @@ cache #(5, 3, 1, 0) l1_i_cache (
     .ca_write()
 );
 
-prefetch instruction_l1_l2_prefetch (
-    .clk(clk),
-    .rst(rst),
-    // interface with the CPU 
-    .mem_addr_from_cpu(i_addr_prefetch_up),   
-    .mem_read_from_cpu(i_read_prefetch_up),
-    .cpu_resp(i_resp_prefetch_up),
-    // upterface with the cache
-    .mem_addr_out(i_addr_prefetch_down),
-    .cache_read(i_read_prefetch_down),
-    .cache_resp(i_resp_prefetch_down)
-);
+generate
+    if (use_i_prefetcher) begin
+        prefetch instruction_l1_l2_prefetch (
+            .clk(clk),
+            .rst(rst),
+            // interface with the CPU 
+            .mem_addr_from_cpu(i_addr_prefetch_up),   
+            .mem_read_from_cpu(i_read_prefetch_up),
+            .cpu_resp(i_resp_prefetch_up),
+            // upterface with the cache
+            .mem_addr_out(i_addr_prefetch_down),
+            .cache_read(i_read_prefetch_down),
+            .cache_resp(i_resp_prefetch_down)
+        );
+    end
+endgenerate
 
-cache #(5, 6, 2, 1) l2_i_cache(
-    .clk(clk),
-    .rst(rst),
-    // I-Bus-Adapter side
-    .mem_addr(i_addr_l2_up),
-    .mem_wdata256('X),
-    .mem_rdata256(i_rdata256_l2_up),
-    .mem_byte_enable256(32'hFFFFFFFF),
-    .mem_read(i_read_l2_up),
-    .mem_write(1'b0),
-    .mem_resp(i_resp_l2_up),
-    // Arbiter side
-    .ca_wdata(),
-    .ca_rdata(i_rdata256_l2_down),
-    .ca_addr(i_addr_l2_down),
-    .ca_resp(i_resp_l2_down),
-    .ca_read(i_read_l2_down),
-    .ca_write()
-);
+generate
+    if (use_l2_i_cache) begin
+        cache #(5, l2_i_cache_s_index, l2_i_cache_way_deg, 1) l2_i_cache (
+            .clk(clk),
+            .rst(rst),
+            // I-Bus-Adapter side
+            .mem_addr(i_addr_l2_up),
+            .mem_wdata256('X),
+            .mem_rdata256(i_rdata256_l2_up),
+            .mem_byte_enable256(32'hFFFFFFFF),
+            .mem_read(i_read_l2_up),
+            .mem_write(1'b0),
+            .mem_resp(i_resp_l2_up),
+            // Arbiter side
+            .ca_wdata(),
+            .ca_rdata(i_rdata256_l2_down),
+            .ca_addr(i_addr_l2_down),
+            .ca_resp(i_resp_l2_down),
+            .ca_read(i_read_l2_down),
+            .ca_write()
+        );
+    end
+endgenerate
 
 bus_adapter d_bus_adapter (
     // CPU side
@@ -226,7 +301,7 @@ bus_adapter d_bus_adapter (
     .mem_byte_enable256(d_byte_enable256)
 );
 
-cache #(5, 3, 1, 0) l1_d_cache(
+cache #(5, l1_d_cache_s_index, 1, 0) l1_d_cache(
     .clk(clk),
     .rst(rst),
     // D-Bus-Adapter side
@@ -247,26 +322,29 @@ cache #(5, 3, 1, 0) l1_d_cache(
     // NOTE: no byte_enable
 );
 
-
-cache #(5, 10, 3, 1) l2_d_cache(
-    .clk(clk),
-    .rst(rst),
-    // L1 D-Cache side
-    .mem_addr(d_addr_l2_up),
-    .mem_wdata256(d_wdata256_l2_up),
-    .mem_rdata256(d_rdata256_l2_up),
-    .mem_byte_enable256(32'hFFFFFFFF),
-    .mem_read(d_read_l2_up),
-    .mem_write(d_write_l2_up),
-    .mem_resp(d_resp_l2_up),
-    // Arbiter side
-    .ca_wdata(d_wdata256_l2_down),
-    .ca_rdata(d_rdata256_l2_down),
-    .ca_addr(d_addr_l2_down),
-    .ca_resp(d_resp_l2_down),
-    .ca_read(d_read_l2_down),
-    .ca_write(d_write_l2_down)
-);
+generate
+    if (use_l2_d_cache) begin
+        cache #(5, l2_d_cache_s_index, l2_d_cache_way_deg, 1) l2_d_cache(
+            .clk(clk),
+            .rst(rst),
+            // L1 D-Cache side
+            .mem_addr(d_addr_l2_up),
+            .mem_wdata256(d_wdata256_l2_up),
+            .mem_rdata256(d_rdata256_l2_up),
+            .mem_byte_enable256(32'hFFFFFFFF),
+            .mem_read(d_read_l2_up),
+            .mem_write(d_write_l2_up),
+            .mem_resp(d_resp_l2_up),
+            // Arbiter side
+            .ca_wdata(d_wdata256_l2_down),
+            .ca_rdata(d_rdata256_l2_down),
+            .ca_addr(d_addr_l2_down),
+            .ca_resp(d_resp_l2_down),
+            .ca_read(d_read_l2_down),
+            .ca_write(d_write_l2_down)
+        );
+        end
+    endgenerate
 
 arbiter arbiter(
     // L1 I-Cache size

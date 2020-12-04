@@ -31,6 +31,9 @@ int l2_d_cache_read_from_l1_cnt = 0;
 int l2_d_cache_write_from_l1_cnt = 0;
 int l2_d_cache_hit_cnt = 0;
 
+int pmem_read_cnt = 0;
+int pmem_write_cnt = 0;
+
 always @(posedge itf.clk) begin
     if (itf.halt) begin
         $display("[PerformanceCounter] Total cycles: %0d", total_cycles);
@@ -57,6 +60,9 @@ always @(posedge itf.clk) begin
         $display("[PerformanceCounter] L2 D-Cache write count: %0d", l2_d_cache_write_cnt);
         $display("[PerformanceCounter] L2 D-Cache write (from L1) count: %0d", l2_d_cache_write_from_l1_cnt);
         $display("[PerformanceCounter] L2 D-Cache hit count: %0d", l2_d_cache_hit_cnt);
+        $display("");
+        $display("[PerformanceCounter] PMEM read count: %0d", pmem_read_cnt);
+        $display("[PerformanceCounter] PMEM write count: %0d", pmem_write_cnt);
         $finish;
     end
 end
@@ -102,7 +108,8 @@ always @(posedge itf.clk iff ~itf.rst) begin
     l1_i_cache_read_cnt++;
     @(negedge itf.clk)
     if (itf.l1_i_cache_resp) l1_i_cache_hit_cnt++;
-    @(posedge itf.clk iff (itf.l1_i_cache_resp && ~itf.pipeline_stall_id));
+    @(posedge itf.clk iff itf.l1_i_cache_resp);
+    wait (~itf.pipeline_stall_id);
 end
 
 // L2 I-Cache
@@ -111,8 +118,9 @@ always @(posedge itf.clk iff ~itf.rst) begin
     l2_i_cache_read_cnt++;
     if (itf.l2_i_cache_read_from_l1) l2_i_cache_read_from_l1_cnt++;
     @(posedge itf.clk)
+    @(negedge itf.clk)
     if (itf.l2_i_cache_resp) l2_i_cache_hit_cnt++;
-    @(posedge itf.clk iff (itf.l2_i_cache_resp));
+    @(posedge itf.clk iff itf.l2_i_cache_resp);
 end
 
 // L1 D-Cache
@@ -122,7 +130,8 @@ always @(posedge itf.clk iff ~itf.rst) begin
     if (itf.l1_d_cache_write) l1_d_cache_write_cnt++;
     @(negedge itf.clk)
     if (itf.l1_d_cache_resp) l1_d_cache_hit_cnt++;
-    @(posedge itf.clk iff (itf.l1_d_cache_resp && ~itf.pipeline_stall_ex));
+    @(posedge itf.clk iff itf.l1_d_cache_resp);
+    wait (~itf.pipeline_stall_ex);
 end
 
 // L2 D-Cache
@@ -133,8 +142,17 @@ always @(posedge itf.clk iff ~itf.rst) begin
     if (itf.l2_d_cache_read_from_l1) l2_d_cache_read_from_l1_cnt++;
     if (itf.l2_d_cache_write_from_l1) l2_d_cache_write_from_l1_cnt++;
     @(posedge itf.clk)
+    @(negedge itf.clk)
     if (itf.l2_d_cache_resp) l2_d_cache_hit_cnt++;
-    @(posedge itf.clk iff (itf.l2_d_cache_resp));
+    @(posedge itf.clk iff itf.l2_d_cache_resp);
+end
+
+// ParamMemory
+always @(posedge itf.clk iff ~itf.rst) begin
+    wait (itf.pmem_read || itf.pmem_write);
+    if (itf.pmem_read) pmem_read_cnt++;
+    if (itf.pmem_write) pmem_write_cnt++;
+    @(posedge itf.clk iff itf.pmem_resp);
 end
 
 endmodule
