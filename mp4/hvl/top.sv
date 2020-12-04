@@ -9,7 +9,7 @@
 `define L1_D_CACHE_S_INDEX  3
 
 `define USE_L2_D_CACHE      1
-`define L2_D_CACHE_S_INDEX  10
+`define L2_D_CACHE_S_INDEX  8
 `define L2_D_CACHE_WAY_DEG  3
 
 `define USE_D_PREFETCHER    0
@@ -138,6 +138,7 @@ assign itf.registers = dut.cpu.datapath.regfile.data;
 
 assign perf_cnt.halt = (rvfi.commit && rvfi.pc_rdata === rvfi.pc_wdata);
 assign perf_cnt.commit = rvfi.commit;
+assign perf_cnt.registers = dut.cpu.datapath.regfile.data;
 
 assign perf_cnt.pipeline_stall_id = dut.cpu.datapath.stall_id;
 assign perf_cnt.pipeline_stall_ex = dut.cpu.datapath.stall_ex;

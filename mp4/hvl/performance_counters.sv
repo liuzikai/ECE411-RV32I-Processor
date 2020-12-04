@@ -36,6 +36,12 @@ int pmem_write_cnt = 0;
 
 always @(posedge itf.clk) begin
     if (itf.halt) begin
+        $display("");
+        $display("Registers:");
+        for (int i = 0; i < 32; i++) begin
+            $display("    x%0d = 0x%X", i, itf.registers[i]);
+        end
+        $display("");
         $display("[PerformanceCounter] Total cycles: %0d", total_cycles);
         $display("[PerformanceCounter] Cycles not commit: %0d", cycles_not_commit);
         $display("[PerformanceCounter] Bubbles: %0d", bubble_cnt);

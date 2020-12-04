@@ -29,6 +29,7 @@ module cache_datapath #(
 
     output logic [way_deg-1:0] lru_way,
     output logic lru_dirty,
+    output logic lru_valid,
 
     // control -> datapath
     input logic load_tag[2**way_deg],
@@ -102,7 +103,7 @@ generate
         end
 
         // Must use logic array due to reset requirement
-        logic_array #(s_index, 1) valid_array (
+        logic_array #(s_index, 1, resp_cycle) valid_array (
             .clk(clk),
             .rst(rst),
             .load(set_valid[i]),
@@ -112,16 +113,27 @@ generate
             .dataout(valid_out[i])
         );
 
-        // Must use logic array due to reset requirement
-        logic_array #(s_index, 1) dirty_array (
-            .clk(clk),
-            .rst(rst),
-            .load(load_dirty[i]),
-            .rindex(set_index),
-            .windex(set_index),
-            .datain(dirty_in[i]),
-            .dataout(dirty_out[i])
-        );
+        if (resp_cycle == 0) begin
+            logic_array #(s_index, 1, resp_cycle) dirty_array (
+                .clk(clk),
+                .rst(rst),
+                .load(load_dirty[i]),
+                .rindex(set_index),
+                .windex(set_index),
+                .datain(dirty_in[i]),
+                .dataout(dirty_out[i])
+            );
+        end else begin
+            bram_array #(s_index, 1) dirty_array (
+                .clk(clk),
+                // No rst
+                .load(load_dirty[i]),
+                // Common index
+                .index(set_index),
+                .datain(dirty_in[i]),
+                .dataout(dirty_out[i])
+            );
+        end
 
         if (resp_cycle == 0) begin
             logic_data_array #(s_offset, s_index) data_array (
@@ -148,7 +160,7 @@ generate
 endgenerate
 
 // Must use logic array due to reset requirement
-logic_array #(s_index, 2**way_deg-1) lru_array (
+logic_array #(s_index, 2**way_deg-1, resp_cycle) lru_array (
     .clk(clk),
     .rst(rst),
     .load(load_lru),
@@ -203,6 +215,7 @@ generate
 endgenerate
 
 assign lru_dirty = dirty_out[lru_way];
+assign lru_valid = valid_out[lru_way];
 
 
 // ================================ Muxes ================================

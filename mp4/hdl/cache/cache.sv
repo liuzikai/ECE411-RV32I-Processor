@@ -46,6 +46,7 @@ logic [way_deg-1:0] hit_way;
 
 logic [way_deg-1:0] lru_way;
 logic lru_dirty;
+logic lru_valid;
 
 // control -> datapath
 logic load_tag[2**way_deg];

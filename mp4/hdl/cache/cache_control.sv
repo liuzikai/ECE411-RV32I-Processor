@@ -27,6 +27,7 @@ module cache_control #(
 
     input logic [way_deg-1:0] lru_way,
     input logic lru_dirty,
+    input logic lru_valid,
 
     // control -> datapath
     output logic load_tag[2**way_deg],
@@ -70,8 +71,8 @@ generate
             unique case (state)
                 s_match: begin
                     if ((mem_read | mem_write) & ~hit) begin
-                        if (~lru_dirty) next_state = s_load;
-                        else            next_state = s_writeback;
+                        if (~lru_valid || ~lru_dirty) next_state = s_load;
+                        else                          next_state = s_writeback;
                     end else begin
                         next_state = s_match;
                     end
@@ -96,8 +97,8 @@ generate
                 s_match: begin
                     if (hit) next_state = s_idle;
                     else begin
-                        if (~lru_dirty) next_state = s_load;
-                        else            next_state = s_writeback;
+                        if (~lru_valid || ~lru_dirty) next_state = s_load;
+                        else                          next_state = s_writeback;
                     end
                 end
                 s_writeback: next_state = (ca_resp ? s_load : s_writeback);
