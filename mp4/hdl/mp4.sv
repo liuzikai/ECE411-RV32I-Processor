@@ -12,7 +12,7 @@ module mp4 #(
     parameter l1_d_cache_s_index = 3,
 
     parameter use_l2_d_cache = 1,
-    parameter l2_d_cache_s_index = 8,
+    parameter l2_d_cache_s_index = 9,
     parameter l2_d_cache_way_deg = 3,
 
     parameter use_d_prefetcher = 0,

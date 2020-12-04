@@ -9,7 +9,7 @@
 `define L1_D_CACHE_S_INDEX  3
 
 `define USE_L2_D_CACHE      1
-`define L2_D_CACHE_S_INDEX  8
+`define L2_D_CACHE_S_INDEX  9
 `define L2_D_CACHE_WAY_DEG  3
 
 `define USE_D_PREFETCHER    0
