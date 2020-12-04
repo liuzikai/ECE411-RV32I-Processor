@@ -48,7 +48,7 @@ always_ff @(posedge itf.clk) begin : SAMPLING
     if (~dut.cpu.stall_mem) insn_mem <= insn_ex;
     if (~dut.cpu.stall_wb) insn_wb <= insn_mem;
 
-    if (~dut.cpu.stall_id) pc_wdata_id <= (dut.cpu.datapath.bp_enable & dut.cpu.datapath.br_take) ? dut.cpu.datapath.bp_pc_in : (dut.cpu.datapath.pc_out + 4);
+    if (~dut.cpu.stall_id) pc_wdata_id <= dut.cpu.datapath.pc_in;
     if (~dut.cpu.stall_ex) pc_wdata_ex <= pc_wdata_id;
     if (~dut.cpu.stall_mem) pc_wdata_mem <= (dut.cpu.datapath.ex_load_pc ? dut.cpu.datapath.pc_in : pc_wdata_ex);
     if (~dut.cpu.stall_wb) pc_wdata_wb <= pc_wdata_mem;
@@ -61,7 +61,7 @@ always_ff @(posedge itf.clk) begin : SAMPLING
 end
 
 assign rvfi.commit = (dut.cpu.control.mem_wb.opcode != rv32i_types::op_none) && ~dut.cpu.stall_wb; // Set high when a valid instruction is modifying regfile or PC
-assign rvfi.halt = (rvfi.commit && insn_wb === 32'h00000063);   // Set high when you detect an infinite loop
+assign rvfi.halt = (rvfi.commit && rvfi.pc_rdata === rvfi.pc_wdata);   // Set high when you detect an infinite loop
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 

@@ -99,7 +99,7 @@ bus_adapter i_bus_adapter (
 );
 
 
-cache l1_i_cache(
+cache #(5, 3, 1, 0) l1_i_cache (
     .clk(clk),
     .rst(rst),
     // I-Bus-Adapter side
@@ -119,7 +119,7 @@ cache l1_i_cache(
     .ca_write()
 );
 
-prefetch instruction_l1_l2prefetch(
+prefetch instruction_l1_l2_prefetch (
     .clk(clk),
     .rst(rst),
     // interface with the CPU 
@@ -132,7 +132,7 @@ prefetch instruction_l1_l2prefetch(
     .cache_resp(i_resp_l1_l2_prefetch)
 );
 
-cache l2_i_cache(
+cache #(5, 6, 2, 1) l2_i_cache(
     .clk(clk),
     .rst(rst),
     // I-Bus-Adapter side
@@ -198,7 +198,7 @@ cache #(5, 3, 1, 0) l1_d_cache(
 //     .cache_resp(d_l1_l2_resp_prefecth)
 // );
 
-cache #(5, 6, 2, 1) l2_d_cache(
+cache #(5, 10, 3, 1) l2_d_cache(
     .clk(clk),
     .rst(rst),
     // L1 D-Cache side

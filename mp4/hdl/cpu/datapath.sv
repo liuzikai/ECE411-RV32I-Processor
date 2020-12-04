@@ -270,7 +270,7 @@ cmp cmp(
     .f(br_en)
 );
 
-tournament_p tournament_p(
+gbht gbht (
     .update(bp_update & ~stall_ex),
     .raddr(pc_out),
     .waddr(pc_ex_out),

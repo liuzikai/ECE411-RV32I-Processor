@@ -196,6 +196,7 @@ generate
                 2'b01: lru_way[0] = lru_out[4];
                 2'b10: lru_way[0] = lru_out[5];
                 2'b11: lru_way[0] = lru_out[6];
+                default: ;
             endcase
         end
     end
