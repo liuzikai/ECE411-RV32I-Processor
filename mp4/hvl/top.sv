@@ -78,8 +78,8 @@ always_ff @(posedge itf.clk) begin : SAMPLING
 end
 
 assign rvfi.commit = (dut.cpu.control.mem_wb.opcode != rv32i_types::op_none) && ~dut.cpu.stall_wb; // Set high when a valid instruction is modifying regfile or PC
-// assign rvfi.halt = (rvfi.commit && rvfi.pc_rdata === rvfi.pc_wdata);
-assign rvfi.halt = 1'b0;  // let performance counter $finish
+assign rvfi.halt = (rvfi.commit && rvfi.pc_rdata === rvfi.pc_wdata);
+// assign rvfi.halt = 1'b0;  // let performance counter $finish
 initial rvfi.order = 0;
 always @(posedge itf.clk iff rvfi.commit) rvfi.order <= rvfi.order + 1; // Modify for OoO
 

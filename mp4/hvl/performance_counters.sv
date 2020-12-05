@@ -109,56 +109,57 @@ always @(negedge itf.clk iff ~itf.rst) begin
 end
 
 // L1 I-Cache
-always @(posedge itf.clk iff ~itf.rst) begin
-    wait (itf.l1_i_cache_read);
-    l1_i_cache_read_cnt++;
-    @(negedge itf.clk)
-    if (itf.l1_i_cache_resp) l1_i_cache_hit_cnt++;
-    @(posedge itf.clk iff itf.l1_i_cache_resp);
-    wait (~itf.pipeline_stall_id);
+always @(negedge itf.clk) begin
+    if (~itf.rst && itf.l1_i_cache_read) begin
+        l1_i_cache_read_cnt++;
+        if (itf.l1_i_cache_resp) l1_i_cache_hit_cnt++;
+        wait (itf.l1_i_cache_resp);
+        wait (~itf.pipeline_stall_id);
+    end
 end
 
 // L2 I-Cache
-always @(posedge itf.clk iff ~itf.rst) begin
-    wait (itf.l2_i_cache_read);
-    l2_i_cache_read_cnt++;
-    if (itf.l2_i_cache_read_from_l1) l2_i_cache_read_from_l1_cnt++;
-    @(posedge itf.clk)
-    @(negedge itf.clk)
-    if (itf.l2_i_cache_resp) l2_i_cache_hit_cnt++;
-    @(posedge itf.clk iff itf.l2_i_cache_resp);
+always @(negedge itf.clk) begin
+    if (~itf.rst && itf.l2_i_cache_read) begin
+        l2_i_cache_read_cnt++;
+        if (itf.l2_i_cache_read_from_l1) l2_i_cache_read_from_l1_cnt++;
+        @(posedge itf.clk)
+        if (itf.l2_i_cache_resp) l2_i_cache_hit_cnt++;
+        wait (itf.l2_i_cache_resp);
+    end
 end
 
 // L1 D-Cache
-always @(posedge itf.clk iff ~itf.rst) begin
-    wait (itf.l1_d_cache_read || itf.l1_d_cache_write);
-    if (itf.l1_d_cache_read) l1_d_cache_read_cnt++;
-    if (itf.l1_d_cache_write) l1_d_cache_write_cnt++;
-    @(negedge itf.clk)
-    if (itf.l1_d_cache_resp) l1_d_cache_hit_cnt++;
-    @(posedge itf.clk iff itf.l1_d_cache_resp);
-    wait (~itf.pipeline_stall_ex);
+always @(negedge itf.clk) begin
+    if (~itf.rst && (itf.l1_d_cache_read || itf.l1_d_cache_write)) begin
+        if (itf.l1_d_cache_read) l1_d_cache_read_cnt++;
+        if (itf.l1_d_cache_write) l1_d_cache_write_cnt++;
+        if (itf.l1_d_cache_resp) l1_d_cache_hit_cnt++;
+        wait (itf.l1_d_cache_resp);
+        wait (~itf.pipeline_stall_ex);
+    end
 end
 
 // L2 D-Cache
-always @(posedge itf.clk iff ~itf.rst) begin
-    wait (itf.l2_d_cache_read || itf.l2_d_cache_write);
-    if (itf.l2_d_cache_read) l2_d_cache_read_cnt++;
-    if (itf.l2_d_cache_write) l2_d_cache_write_cnt++;
-    if (itf.l2_d_cache_read_from_l1) l2_d_cache_read_from_l1_cnt++;
-    if (itf.l2_d_cache_write_from_l1) l2_d_cache_write_from_l1_cnt++;
-    @(posedge itf.clk)
-    @(negedge itf.clk)
-    if (itf.l2_d_cache_resp) l2_d_cache_hit_cnt++;
-    @(posedge itf.clk iff itf.l2_d_cache_resp);
+always @(negedge itf.clk) begin
+    if (~itf.rst && (itf.l2_d_cache_read || itf.l2_d_cache_write)) begin
+        if (itf.l2_d_cache_read) l2_d_cache_read_cnt++;
+        if (itf.l2_d_cache_write) l2_d_cache_write_cnt++;
+        if (itf.l2_d_cache_read_from_l1) l2_d_cache_read_from_l1_cnt++;
+        if (itf.l2_d_cache_write_from_l1) l2_d_cache_write_from_l1_cnt++;
+        @(posedge itf.clk);
+        if (itf.l2_d_cache_resp) l2_d_cache_hit_cnt++;
+        wait (itf.l2_d_cache_resp);
+    end
 end
 
 // ParamMemory
-always @(posedge itf.clk iff ~itf.rst) begin
-    wait (itf.pmem_read || itf.pmem_write);
-    if (itf.pmem_read) pmem_read_cnt++;
-    if (itf.pmem_write) pmem_write_cnt++;
-    @(posedge itf.clk iff itf.pmem_resp);
+always @(negedge itf.clk) begin
+    if (~itf.rst && (itf.pmem_read || itf.pmem_write)) begin
+        if (itf.pmem_read) pmem_read_cnt++;
+        if (itf.pmem_write) pmem_write_cnt++;
+        wait (itf.pmem_resp);
+    end
 end
 
 endmodule
