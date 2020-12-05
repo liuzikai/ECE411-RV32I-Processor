@@ -55,16 +55,16 @@ always @(posedge itf.clk) begin
         $display("[PerformanceCounter] L1 I-Cache read count: %0d", l1_i_cache_read_cnt);
         $display("[PerformanceCounter] L1 I-Cache hit count: %0d", l1_i_cache_hit_cnt);
         $display("[PerformanceCounter] L2 I-Cache read count: %0d", l2_i_cache_read_cnt);
-        $display("[PerformanceCounter] L2 I-Cache read (from L1) count: %0d", l2_i_cache_read_from_l1_cnt);
+        // $display("[PerformanceCounter] L2 I-Cache read (from L1) count: %0d", l2_i_cache_read_from_l1_cnt);
         $display("[PerformanceCounter] L2 I-Cache hit count: %0d", l2_i_cache_hit_cnt);
         $display("");
         $display("[PerformanceCounter] L1 D-Cache read count: %0d", l1_d_cache_read_cnt);
         $display("[PerformanceCounter] L1 D-Cache write count: %0d", l1_d_cache_write_cnt);
         $display("[PerformanceCounter] L1 D-Cache hit count: %0d", l1_d_cache_hit_cnt);
         $display("[PerformanceCounter] L2 D-Cache read count: %0d", l2_d_cache_read_cnt);
-        $display("[PerformanceCounter] L2 D-Cache read (from L1) count: %0d", l2_d_cache_read_from_l1_cnt);
+        // $display("[PerformanceCounter] L2 D-Cache read (from L1) count: %0d", l2_d_cache_read_from_l1_cnt);
         $display("[PerformanceCounter] L2 D-Cache write count: %0d", l2_d_cache_write_cnt);
-        $display("[PerformanceCounter] L2 D-Cache write (from L1) count: %0d", l2_d_cache_write_from_l1_cnt);
+        // $display("[PerformanceCounter] L2 D-Cache write (from L1) count: %0d", l2_d_cache_write_from_l1_cnt);
         $display("[PerformanceCounter] L2 D-Cache hit count: %0d", l2_d_cache_hit_cnt);
         $display("");
         $display("[PerformanceCounter] PMEM read count: %0d", pmem_read_cnt);
@@ -114,19 +114,19 @@ always @(negedge itf.clk) begin
         l1_i_cache_read_cnt++;
         if (itf.l1_i_cache_resp) l1_i_cache_hit_cnt++;
         wait (itf.l1_i_cache_resp);
-        wait (~itf.pipeline_stall_id);
+        // wait (~itf.pipeline_stall_id);
     end
 end
 
 // L2 I-Cache
-always @(negedge itf.clk) begin
-    if (~itf.rst && itf.l2_i_cache_read) begin
-        l2_i_cache_read_cnt++;
-        if (itf.l2_i_cache_read_from_l1) l2_i_cache_read_from_l1_cnt++;
-        @(posedge itf.clk)
-        if (itf.l2_i_cache_resp) l2_i_cache_hit_cnt++;
-        wait (itf.l2_i_cache_resp);
-    end
+always begin
+    @(posedge itf.clk iff (~itf.rst && itf.l2_i_cache_read));
+    l2_i_cache_read_cnt++;
+    // if (itf.l2_i_cache_read_from_l1) l2_i_cache_read_from_l1_cnt++;
+    @(posedge itf.clk)
+    @(posedge itf.clk);
+    if (itf.l2_i_cache_resp) l2_i_cache_hit_cnt++;
+    wait (itf.l2_i_cache_resp);
 end
 
 // L1 D-Cache
@@ -136,30 +136,29 @@ always @(negedge itf.clk) begin
         if (itf.l1_d_cache_write) l1_d_cache_write_cnt++;
         if (itf.l1_d_cache_resp) l1_d_cache_hit_cnt++;
         wait (itf.l1_d_cache_resp);
-        wait (~itf.pipeline_stall_ex);
+        // wait (~itf.pipeline_stall_ex);
     end
 end
 
 // L2 D-Cache
-always @(negedge itf.clk) begin
-    if (~itf.rst && (itf.l2_d_cache_read || itf.l2_d_cache_write)) begin
-        if (itf.l2_d_cache_read) l2_d_cache_read_cnt++;
-        if (itf.l2_d_cache_write) l2_d_cache_write_cnt++;
-        if (itf.l2_d_cache_read_from_l1) l2_d_cache_read_from_l1_cnt++;
-        if (itf.l2_d_cache_write_from_l1) l2_d_cache_write_from_l1_cnt++;
-        @(posedge itf.clk);
-        if (itf.l2_d_cache_resp) l2_d_cache_hit_cnt++;
-        wait (itf.l2_d_cache_resp);
-    end
+always begin
+    @(posedge itf.clk iff (~itf.rst && (itf.l2_d_cache_read || itf.l2_d_cache_write)));
+    if (itf.l2_d_cache_read) l2_d_cache_read_cnt++;
+    if (itf.l2_d_cache_write) l2_d_cache_write_cnt++;
+    // if (itf.l2_d_cache_read_from_l1) l2_d_cache_read_from_l1_cnt++;
+    // if (itf.l2_d_cache_write_from_l1) l2_d_cache_write_from_l1_cnt++;
+    @(posedge itf.clk);
+    @(posedge itf.clk);
+    if (itf.l2_d_cache_resp) l2_d_cache_hit_cnt++;
+    wait (itf.l2_d_cache_resp);
 end
 
 // ParamMemory
-always @(negedge itf.clk) begin
-    if (~itf.rst && (itf.pmem_read || itf.pmem_write)) begin
-        if (itf.pmem_read) pmem_read_cnt++;
-        if (itf.pmem_write) pmem_write_cnt++;
-        wait (itf.pmem_resp);
-    end
+always begin
+    @(posedge itf.clk iff (~itf.rst && (itf.pmem_read || itf.pmem_write)));
+    if (itf.pmem_read) pmem_read_cnt++;
+    if (itf.pmem_write) pmem_write_cnt++;
+    wait (itf.pmem_resp);
 end
 
 endmodule
