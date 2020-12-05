@@ -16,6 +16,58 @@
 
 `define BP_TYPE             0
 
+`ifndef PERF_CNT_ITF
+`define PERF_CNT_ITF
+
+interface perf_cnt_itf(input clk, input rst);
+
+    logic halt;
+    logic [31:0] registers[32];
+    
+    // Caches
+
+    logic l1_i_cache_read;
+    logic l1_i_cache_resp;
+
+    logic l2_i_cache_read;
+    logic l2_i_cache_read_from_l1;
+    logic l2_i_cache_resp;
+
+    logic l1_d_cache_read;
+    logic l1_d_cache_write;
+    logic l1_d_cache_resp;
+
+    logic l2_d_cache_read;
+    logic l2_d_cache_read_from_l1;
+    logic l2_d_cache_write;
+    logic l2_d_cache_write_from_l1;
+    logic l2_d_cache_resp;
+
+    logic pmem_read;
+    logic pmem_write;
+    logic pmem_resp;
+
+    // Branch prediction
+
+    logic [6:0] pipeline_ex_opcode;
+    logic mispred;
+
+    // Pipeline stall and flush
+
+    logic commit;
+
+    logic pipeline_stall_id;
+    logic pipeline_stall_ex;
+
+    logic pipeline_stall_waiting_i;
+    logic pipeline_stall_waiting_d;
+
+    logic pipeline_flush;
+
+endinterface
+
+`endif
+
 module mp4_tb;
 `timescale 1ns/10ps
 
@@ -229,5 +281,173 @@ mp4 #(
     .mem_resp(itf.mem_resp)
 );
 /***************************** End Instantiation *****************************/
+
+endmodule
+
+module performance_counter(
+    perf_cnt_itf itf
+);
+
+int br_cnt = 0;
+int mispred_cnt = 0;
+int flush_cnt = 0;
+
+int total_cycles = 0;
+int cycles_not_commit = 0;
+int bubble_cnt = 0;
+int i_stall_cnt = 0;
+int d_stall_cnt = 0;
+
+int l1_i_cache_read_cnt = 0;
+int l1_i_cache_hit_cnt = 0;
+
+int l2_i_cache_read_cnt = 0;
+// int l2_i_cache_read_from_l1_cnt = 0;
+int l2_i_cache_hit_cnt = 0;
+
+int l1_d_cache_read_cnt = 0;
+int l1_d_cache_write_cnt = 0;
+int l1_d_cache_hit_cnt = 0;
+
+int l2_d_cache_read_cnt = 0;
+int l2_d_cache_write_cnt = 0;
+// int l2_d_cache_read_from_l1_cnt = 0;
+// int l2_d_cache_write_from_l1_cnt = 0;
+int l2_d_cache_hit_cnt = 0;
+
+int pmem_read_cnt = 0;
+int pmem_write_cnt = 0;
+
+always @(posedge itf.clk) begin
+    if (itf.halt) begin
+        $display("");
+        $display("Registers:");
+        for (int i = 0; i < 32; i++) begin
+            $display("    x%0d = 0x%X", i, itf.registers[i]);
+        end
+        $display("");
+        $display("[PerformanceCounter] Total cycles: %0d", total_cycles);
+        $display("[PerformanceCounter] Cycles not commit: %0d", cycles_not_commit);
+        $display("[PerformanceCounter] Bubbles: %0d", bubble_cnt);
+        $display("[PerformanceCounter] Stall cycles waiting for inst: %0d", i_stall_cnt);
+        $display("[PerformanceCounter] Stall cycles waiting for data: %0d", d_stall_cnt);
+        $display("[PerformanceCounter] Flush: %0d", flush_cnt);
+        $display("");
+        $display("[PerformanceCounter] BR count: %0d", br_cnt);
+        $display("[PerformanceCounter] Mispredict: %0d", mispred_cnt);
+        $display("");
+        $display("[PerformanceCounter] L1 I-Cache read count: %0d", l1_i_cache_read_cnt);
+        $display("[PerformanceCounter] L1 I-Cache hit count: %0d", l1_i_cache_hit_cnt);
+        $display("[PerformanceCounter] L2 I-Cache read count: %0d", l2_i_cache_read_cnt);
+        // $display("[PerformanceCounter] L2 I-Cache read (from L1) count: %0d", l2_i_cache_read_from_l1_cnt);
+        $display("[PerformanceCounter] L2 I-Cache hit count: %0d", l2_i_cache_hit_cnt);
+        $display("");
+        $display("[PerformanceCounter] L1 D-Cache read count: %0d", l1_d_cache_read_cnt);
+        $display("[PerformanceCounter] L1 D-Cache write count: %0d", l1_d_cache_write_cnt);
+        $display("[PerformanceCounter] L1 D-Cache hit count: %0d", l1_d_cache_hit_cnt);
+        $display("[PerformanceCounter] L2 D-Cache read count: %0d", l2_d_cache_read_cnt);
+        // $display("[PerformanceCounter] L2 D-Cache read (from L1) count: %0d", l2_d_cache_read_from_l1_cnt);
+        $display("[PerformanceCounter] L2 D-Cache write count: %0d", l2_d_cache_write_cnt);
+        // $display("[PerformanceCounter] L2 D-Cache write (from L1) count: %0d", l2_d_cache_write_from_l1_cnt);
+        $display("[PerformanceCounter] L2 D-Cache hit count: %0d", l2_d_cache_hit_cnt);
+        $display("");
+        $display("[PerformanceCounter] PMEM read count: %0d", pmem_read_cnt);
+        $display("[PerformanceCounter] PMEM write count: %0d", pmem_write_cnt);
+        $finish;
+    end
+end
+
+always @(negedge itf.clk iff ~itf.rst) begin
+
+    if (~itf.pipeline_stall_ex) begin
+        if (itf.pipeline_ex_opcode === rv32i_types::op_br) begin
+            br_cnt++;
+        end
+
+        if (itf.pipeline_flush) begin
+            flush_cnt++;
+        end
+
+        if (itf.pipeline_flush && itf.mispred) begin
+            mispred_cnt++;
+        end
+    end
+
+    total_cycles++; 
+    if (~itf.commit) begin
+        cycles_not_commit++;
+    end
+
+    if (itf.pipeline_stall_id && ~itf.pipeline_stall_ex) begin
+        bubble_cnt++;
+    end
+
+    if (itf.pipeline_stall_waiting_i) begin
+        i_stall_cnt++;
+    end
+
+    if (itf.pipeline_stall_waiting_d) begin
+        d_stall_cnt++;
+    end
+
+end
+
+// L1 I-Cache
+always @(negedge itf.clk) begin
+    if (~itf.rst && itf.l1_i_cache_read) begin
+        l1_i_cache_read_cnt++;
+        if (itf.l1_i_cache_resp) l1_i_cache_hit_cnt++;
+        wait (itf.l1_i_cache_resp);
+        // wait (~itf.pipeline_stall_id);
+    end
+end
+
+// L2 I-Cache
+always begin
+    @(posedge itf.clk iff (~itf.rst && itf.l2_i_cache_read));
+    l2_i_cache_read_cnt++;
+    // if (itf.l2_i_cache_read_from_l1) l2_i_cache_read_from_l1_cnt++;
+    // @(posedge itf.clk)
+    @(posedge itf.clk);
+    // @(negedge itf.clk);
+    if (itf.l2_i_cache_resp) l2_i_cache_hit_cnt++;
+    wait (itf.l2_i_cache_resp);
+    @(posedge itf.clk);
+end
+
+// L1 D-Cache
+always @(negedge itf.clk) begin
+    if (~itf.rst && (itf.l1_d_cache_read || itf.l1_d_cache_write)) begin
+        if (itf.l1_d_cache_read) l1_d_cache_read_cnt++;
+        if (itf.l1_d_cache_write) l1_d_cache_write_cnt++;
+        if (itf.l1_d_cache_resp) l1_d_cache_hit_cnt++;
+        wait (itf.l1_d_cache_resp);
+        // wait (~itf.pipeline_stall_ex);
+    end
+end
+
+// L2 D-Cache
+always begin
+    @(posedge itf.clk iff (~itf.rst && (itf.l2_d_cache_read || itf.l2_d_cache_write)));
+    if (itf.l2_d_cache_read) l2_d_cache_read_cnt++;
+    if (itf.l2_d_cache_write) l2_d_cache_write_cnt++;
+    // if (itf.l2_d_cache_read_from_l1) l2_d_cache_read_from_l1_cnt++;
+    // if (itf.l2_d_cache_write_from_l1) l2_d_cache_write_from_l1_cnt++;
+    // @(posedge itf.clk);
+    @(posedge itf.clk);
+    // @(negedge itf.clk);
+    if (itf.l2_d_cache_resp) l2_d_cache_hit_cnt++;
+    wait (itf.l2_d_cache_resp);
+    @(posedge itf.clk);
+end
+
+// ParamMemory
+always begin
+    @(posedge itf.clk iff (~itf.rst === 1'b1 && (itf.pmem_read === 1'b1 || itf.pmem_write === 1'b1)));
+    if (itf.pmem_read) pmem_read_cnt++;
+    if (itf.pmem_write) pmem_write_cnt++;
+    wait (itf.pmem_resp);
+    wait (~itf.pmem_resp);
+end
 
 endmodule
