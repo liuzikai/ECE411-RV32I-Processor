@@ -32,7 +32,8 @@ int timeout = 100000000;
 
 always @(posedge tb_itf.clk) begin
     if (rvfi.halt)
-        $finish;
+        // NOTE: Let performance counter $finish
+        // $finish;
     if (timeout == 0) begin
         $display("TOP: Timed out");
         $finish;
