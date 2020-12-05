@@ -36,9 +36,9 @@ do
             for file in $testfile
             do 
                 cp ./hvl/top_orig.sv ./hvl/top.sv
-                sed -i "s/`define USE_L2_I_CACHE      1/`define USE_L2_I_CACHE      $l2_i_switch/g" ./hvl/top.sv
-                sed -i "s/`define L2_D_CACHE_S_INDEX  9/`define L2_D_CACHE_S_INDEX  $l2_d_s_idx/g" ./hvl/top.sv
-                sed -i "s/`define L2_D_CACHE_WAY_DEG  3/`define L2_D_CACHE_WAY_DEG  $l2_d_way/g" ./hvl/top.sv
+                sed -i "s/define USE_L2_I_CACHE      1/define USE_L2_I_CACHE      $l2_i_switch/g" ./hvl/top.sv
+                sed -i "s/define L2_D_CACHE_S_INDEX  9/define L2_D_CACHE_S_INDEX  $l2_d_s_idx/g" ./hvl/top.sv
+                sed -i "s/define L2_D_CACHE_WAY_DEG  3/define L2_D_CACHE_WAY_DEG  $l2_d_way/g" ./hvl/top.sv
                 # sed -i "s/`define USE_L2_I_CACHE      1/`define USE_L2_I_CACHE      0/g" ./hvl/top.sv
                 # sed -i "s/`define USE_I_PREFETCHER    1/`define USE_I_PREFETCHER    0/g" ./hvl/top.sv
                 # sed -i "s/`define USE_L2_D_CACHE      1/`define USE_L2_D_CACHE      0/g" ./hvl/top.sv
@@ -51,6 +51,7 @@ do
                 # make sure we append the result
                 # echo "Data from running $file"
                 echo "Data from running $file" >> data.log
+                echo "Data from running $file" >> time.log
                 grep -i "Iteration: 1" $file.log >> time.log
                 grep -i "Iteration: 1" $file.log >> data.log
                 grep -i "PerformanceCounter" $file.log >> data.log
