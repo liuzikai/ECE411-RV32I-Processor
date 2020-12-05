@@ -51,8 +51,9 @@ do
                 # make sure we append the result
                 # echo "Data from running $file"
                 echo "Data from running $file" >> data.log
+                grep -i "Iteration: 1" $file.log >> time.log
                 grep -i "Iteration: 1" $file.log >> data.log
-                grep -i "[PerformanceCounter]" $file.log >> data.log
+                grep -i "PerformanceCounter" $file.log >> data.log
                 # pwd
                 cd ../../../..
                 # pwd
