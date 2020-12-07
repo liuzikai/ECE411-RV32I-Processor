@@ -29,16 +29,17 @@ done
 
 for l2_i_switch in $l2_i_cache_switch; # whether the L2 instruction cache is used or not
 do
+    cp ./hvl/top_orig.sv ./hvl/top.sv
+    sed -i "s/define USE_L2_I_CACHE      1/define USE_L2_I_CACHE      $l2_i_switch/g" ./hvl/top.sv
     for l2_d_s_idx in $l2_d_cache_s_index; # value of the L2 s index 
     do
+        sed -i "s/define L2_D_CACHE_S_INDEX  9/define L2_D_CACHE_S_INDEX  $l2_d_s_idx/g" ./hvl/top.sv
         for l2_d_way in $l2_d_cache_way_deg; # value of way
         do
+            sed -i "s/define L2_D_CACHE_WAY_DEG  3/define L2_D_CACHE_WAY_DEG  $l2_d_way/g" ./hvl/top.sv
             for file in $testfile
             do 
-                cp ./hvl/top_orig.sv ./hvl/top.sv
-                sed -i "s/define USE_L2_I_CACHE      1/define USE_L2_I_CACHE      $l2_i_switch/g" ./hvl/top.sv
-                sed -i "s/define L2_D_CACHE_S_INDEX  9/define L2_D_CACHE_S_INDEX  $l2_d_s_idx/g" ./hvl/top.sv
-                sed -i "s/define L2_D_CACHE_WAY_DEG  3/define L2_D_CACHE_WAY_DEG  $l2_d_way/g" ./hvl/top.sv
+                # cp ./hvl/top_orig.sv ./hvl/top.sv
                 # sed -i "s/`define USE_L2_I_CACHE      1/`define USE_L2_I_CACHE      0/g" ./hvl/top.sv
                 # sed -i "s/`define USE_I_PREFETCHER    1/`define USE_I_PREFETCHER    0/g" ./hvl/top.sv
                 # sed -i "s/`define USE_L2_D_CACHE      1/`define USE_L2_D_CACHE      0/g" ./hvl/top.sv
