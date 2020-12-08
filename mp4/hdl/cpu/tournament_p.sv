@@ -45,9 +45,12 @@ generate
     end else if (bp_type == 1) begin
         assign br_take = l_br_take;
         assign mispred = l_mispred;
-    end else begin
+    end else if (bp_type == 2) begin
         assign br_take = g_br_take;
         assign mispred = g_mispred;
+    end else begin
+        assign br_take = 0;
+        assign mispred = br_en;
     end
 endgenerate
 
